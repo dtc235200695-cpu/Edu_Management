@@ -39,6 +39,91 @@ export default {
 
     try {
       // ------------------------------------------------------------------------
+      // 0. POST /api/auth/login - Xác thực & Đăng nhập hệ thống
+      // ------------------------------------------------------------------------
+      if (method === 'POST' && path === '/api/auth/login') {
+        const body: any = await request.json().catch(() => ({}));
+        const username = (body.username || '').trim();
+        const password = (body.password || '').trim();
+        const requestedRole = body.role;
+
+        if (!username || !password) {
+          return errorResponse('Vui lòng nhập tên đăng nhập và mật khẩu', 400);
+        }
+
+        // 1. Sinh viên (mã SV: SV2026, SV2026_001... hoặc chọn vai trò student)
+        if (requestedRole === 'student' || username.toUpperCase().startsWith('SV') || username.includes('student')) {
+          const cleanSid = username.split('@')[0].toUpperCase();
+          let student = await env.DB.prepare(
+            'SELECT * FROM students WHERE UPPER(student_id) = ?'
+          ).bind(cleanSid).first();
+
+          if (!student && cleanSid === 'SV2026') {
+            student = { student_id: 'SV2026', full_name: 'Nguyễn Thị Hương Giang', class_name: 'K24-CNTT01' };
+          }
+
+          if (student) {
+            return jsonResponse({
+              success: true,
+              message: 'Đăng nhập thành công với vai trò Sinh viên',
+              token: `token_student_${student.student_id}_${Date.now()}`,
+              user: {
+                id: student.student_id,
+                name: student.full_name,
+                role: 'student',
+                roleTitle: 'Sinh viên',
+                roleBadge: 'Sinh viên',
+                department: `Lớp ${student.class_name}`,
+                avatarText: 'SV',
+                studentId: student.student_id,
+                className: student.class_name,
+                email: `${String(student.student_id).toLowerCase()}@student.edu.vn`
+              }
+            });
+          }
+        }
+
+        // 2. Quản trị viên
+        if (requestedRole === 'admin' || username.toLowerCase() === 'admin' || username.includes('admin')) {
+          if (password !== 'admin123' && password !== '123456') {
+            return errorResponse('Mật khẩu quản trị viên không chính xác (Gợi ý: admin123 hoặc 123456)', 401);
+          }
+          return jsonResponse({
+            success: true,
+            message: 'Đăng nhập thành công với vai trò Quản trị viên',
+            token: `token_admin_${Date.now()}`,
+            user: {
+              id: 'AD001',
+              name: 'Quản Trị Viên (Admin)',
+              role: 'admin',
+              roleTitle: 'Cloudflare Admin & DevOps',
+              roleBadge: 'Quản trị viên',
+              department: 'Trung tâm Hạ tầng CNTT',
+              avatarText: 'AD',
+              email: 'admin@eduinsight.cloudflare.com'
+            }
+          });
+        }
+
+        // 3. Giảng viên (Mặc định cho giảng viên)
+        return jsonResponse({
+          success: true,
+          message: 'Đăng nhập thành công với vai trò Giảng viên',
+          token: `token_lecturer_${Date.now()}`,
+          user: {
+            id: 'GV001',
+            name: username.includes('@') ? username.split('@')[0] : 'Ban Giảng Viên',
+            role: 'lecturer',
+            roleTitle: 'Giảng viên phụ trách môn',
+            roleBadge: 'Giảng viên',
+            department: 'Bộ môn KHMT & ĐTĐM',
+            avatarText: 'GV',
+            email: 'giangvien.dtm@cloud.edu.vn'
+          }
+        });
+      }
+
+      // ------------------------------------------------------------------------
       // 1. GET /api/dashboard/overview - Thống kê tổng quan cho Trang 1
       // ------------------------------------------------------------------------
       if (method === 'GET' && path === '/api/dashboard/overview') {

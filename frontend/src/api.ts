@@ -133,3 +133,16 @@ export async function fetchModelInfo() {
   const res = await fetch(`${API_BASE}/ml/model-info`);
   return handleResponse(res);
 }
+
+export async function loginApi(credentials: {
+  username: string;
+  password?: string;
+  role?: string;
+}) {
+  const res = await fetch(`${API_BASE}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(credentials)
+  });
+  return handleResponse(res);
+}

@@ -1,6 +1,6 @@
 // frontend/src/components/Header.tsx
 import React, { useState } from 'react';
-import { Search, Bell, ShieldCheck, CheckCircle2, ChevronDown, User, GraduationCap, UserCheck, Shield } from 'lucide-react';
+import { Search, Bell, ShieldCheck, CheckCircle2, ChevronDown, User, GraduationCap, UserCheck, Shield, LogOut } from 'lucide-react';
 import { UserPersona, UserRole, USER_PERSONAS } from '../types';
 
 interface HeaderProps {
@@ -8,13 +8,15 @@ interface HeaderProps {
   currentUser: UserPersona;
   onSwitchRole: (role: UserRole) => void;
   onSearchChange?: (val: string) => void;
+  onLogout?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ 
   pageTitle, 
   currentUser, 
   onSwitchRole, 
-  onSearchChange 
+  onSearchChange,
+  onLogout
 }) => {
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
 
@@ -171,6 +173,21 @@ export const Header: React.FC<HeaderProps> = ({
                   {currentUser.role === 'admin' && <CheckCircle2 className="w-4 h-4 text-amber-600 shrink-0" />}
                 </button>
               </div>
+
+              {onLogout && (
+                <div className="pt-2 mt-2 border-t border-slate-100">
+                  <button
+                    onClick={() => {
+                      setIsRoleMenuOpen(false);
+                      onLogout();
+                    }}
+                    className="w-full flex items-center space-x-2.5 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-50 rounded-xl transition-colors text-left"
+                  >
+                    <LogOut className="w-4 h-4 text-red-500" />
+                    <span>Đăng xuất tài khoản</span>
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>

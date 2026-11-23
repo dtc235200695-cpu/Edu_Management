@@ -1,8 +1,9 @@
 // frontend/src/App.tsx
-import React, { useState } from 'react';
-import { PageId, UserRole, USER_PERSONAS } from './types';
+import React, { useState, useEffect } from 'react';
+import { PageId, UserRole, UserPersona, USER_PERSONAS } from './types';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
+import { LoginPage } from './pages/LoginPage';
 import { DashboardOverview } from './pages/DashboardOverview';
 import { StudentManagement } from './pages/StudentManagement';
 import { DataAnalytics } from './pages/DataAnalytics';
@@ -13,12 +14,25 @@ import { MLModelManagement } from './pages/MLModelManagement';
 import { SystemSettings } from './pages/SystemSettings';
 
 export const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<PageId>('dashboard');
-  const [selectedStudentForPath, setSelectedStudentForPath] = useState<string>('SV2026');
-  const [currentRole, setCurrentRole] = useState<UserRole>('lecturer');
-  const [headerSearch, setHeaderSearch] = useState<string>('');
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    return !!localStorage.getItem('eduinsight_auth');
+  });
 
-  const currentUser = USER_PERSONAS[currentRole];
+  const [currentUser, setCurrentUser] = useState<UserPersona>(() => {
+    try {
+      const saved = localStorage.getItem('eduinsight_auth');
+      if (saved) return JSON.parse(saved);
+    } catch {
+      // Ignored
+    }
+    return USER_PERSONAS.lecturer;
+  });
+
+  const [currentPage, setCurrentPage] = useState<PageId>('dashboard');
+  const [selectedStudentForPath, setSelectedStudentForPath] = useState<string>(() => {
+    return currentUser?.studentId || 'SV2026';
+  });
+  const [headerSearch, setHeaderSearch] = useState<string>('');
 
   const pageTitleMap: Record<PageId, string> = {
     'dashboard': 'Dashboard tổng quan',
@@ -31,6 +45,19 @@ export const App: React.FC = () => {
     'settings': 'Cài đặt hệ thống'
   };
 
+  const handleLoginSuccess = (user: UserPersona) => {
+    setCurrentUser(user);
+    setIsAuthenticated(true);
+    if (user.role === 'student' && user.studentId) {
+      setSelectedStudentForPath(user.studentId);
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('eduinsight_auth');
+    setIsAuthenticated(false);
+  };
+
   const handleNavigateToPath = (studentId: string) => {
     setSelectedStudentForPath(studentId);
     setCurrentPage('learning-path');
@@ -41,7 +68,9 @@ export const App: React.FC = () => {
   };
 
   const handleSwitchRole = (newRole: UserRole) => {
-    setCurrentRole(newRole);
+    const newPersona = USER_PERSONAS[newRole];
+    setCurrentUser(newPersona);
+    localStorage.setItem('eduinsight_auth', JSON.stringify(newPersona));
     if (newRole === 'student') {
       setSelectedStudentForPath('SV2026');
     }
@@ -54,10 +83,19 @@ export const App: React.FC = () => {
     }
   };
 
+  // If not authenticated, render LoginPage
+  if (!isAuthenticated) {
+    return <LoginPage onLoginSuccess={handleLoginSuccess} />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 flex">
       {/* Sidebar - Fixed Left */}
-      <Sidebar currentPage={currentPage} onSelectPage={setCurrentPage} />
+      <Sidebar 
+        currentPage={currentPage} 
+        onSelectPage={setCurrentPage} 
+        onLogout={handleLogout}
+      />
 
       {/* Main Content Area - Offset by Sidebar width */}
       <div className="flex-1 ml-64 flex flex-col min-h-screen">
@@ -66,6 +104,7 @@ export const App: React.FC = () => {
           currentUser={currentUser}
           onSwitchRole={handleSwitchRole}
           onSearchChange={handleHeaderSearchChange}
+          onLogout={handleLogout}
         />
 
         <main className="flex-1 p-8 overflow-y-auto max-w-7xl w-full mx-auto">

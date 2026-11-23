@@ -11,15 +11,17 @@ import {
   Cpu, 
   Settings,
   GraduationCap,
-  Cloud
+  Cloud,
+  LogOut
 } from 'lucide-react';
 
 interface SidebarProps {
   currentPage: PageId;
   onSelectPage: (page: PageId) => void;
+  onLogout?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onSelectPage }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onSelectPage, onLogout }) => {
   const navItems = [
     { id: 'dashboard' as PageId, label: 'Dashboard tổng quan', icon: LayoutDashboard },
     { id: 'students' as PageId, label: 'Quản lý sinh viên', icon: Users },
@@ -84,6 +86,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, onSelectPage }) =
             <span className="px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded font-medium">D1 SQL</span>
             <span className="px-1.5 py-0.5 bg-purple-50 text-purple-700 rounded font-medium">R2</span>
           </div>
+
+          {onLogout && (
+            <button
+              onClick={onLogout}
+              className="mt-3 w-full flex items-center space-x-2 px-3 py-1.5 text-xs font-semibold text-slate-500 hover:text-red-600 hover:bg-red-50/80 rounded-lg transition-colors border border-slate-200 hover:border-red-200"
+            >
+              <LogOut className="w-3.5 h-3.5 text-slate-400 group-hover:text-red-500" />
+              <span>Đăng xuất</span>
+            </button>
+          )}
         </div>
       </div>
     </aside>
