@@ -28,6 +28,8 @@ export async function fetchOverview(params?: { class_name?: string; course_id?: 
 export async function fetchStudents(params?: {
   search?: string;
   class_name?: string;
+  cohort?: string;
+  faculty?: string;
   risk_level?: string;
   sort_by?: string;
   page?: number;
@@ -36,6 +38,8 @@ export async function fetchStudents(params?: {
   const query = new URLSearchParams();
   if (params?.search) query.set('search', params.search);
   if (params?.class_name) query.set('class_name', params.class_name);
+  if (params?.cohort) query.set('cohort', params.cohort);
+  if (params?.faculty) query.set('faculty', params.faculty);
   if (params?.risk_level) query.set('risk_level', params.risk_level);
   if (params?.sort_by) query.set('sort_by', params.sort_by);
   if (params?.page) query.set('page', params.page.toString());

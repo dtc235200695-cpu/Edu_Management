@@ -166,6 +166,57 @@ export const SystemSettings: React.FC = () => {
             <p className="text-xs text-slate-500">Phân tách rõ ràng quyền hạn giữa Sinh viên, Giảng viên và Quản trị viên</p>
           </div>
 
+          {/* Active System Users List */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
+            <div className="p-4 bg-blue-50/60 border border-blue-200/80 rounded-xl space-y-2">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-600 text-white font-bold flex items-center justify-center text-xs">
+                  GV
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900">Ban Giảng Viên</h4>
+                  <span className="text-[11px] text-blue-700 font-semibold">Vai trò: Giảng viên</span>
+                </div>
+              </div>
+              <p className="text-xs text-slate-600">Quyền xem toàn bộ sinh viên, chấm điểm, quản lý lộ trình học tập, nhập dữ liệu CSV.</p>
+              <div className="text-[11px] font-mono text-slate-500 pt-1 border-t border-blue-100">
+                Email: giangvien.dtm@cloud.edu.vn
+              </div>
+            </div>
+
+            <div className="p-4 bg-purple-50/60 border border-purple-200/80 rounded-xl space-y-2">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-lg bg-purple-600 text-white font-bold flex items-center justify-center text-xs">
+                  SV
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900">Hương Giang (SV2026)</h4>
+                  <span className="text-[11px] text-purple-700 font-semibold">Vai trò: Sinh viên</span>
+                </div>
+              </div>
+              <p className="text-xs text-slate-600">Lớp K24-CNTT01. Quyền xem hồ sơ cá nhân, đánh dấu tiến độ bài học, chạy dự đoán ML kết quả học tập.</p>
+              <div className="text-[11px] font-mono text-slate-500 pt-1 border-t border-purple-100">
+                Email: giang.sv2026@student.edu.vn
+              </div>
+            </div>
+
+            <div className="p-4 bg-amber-50/60 border border-amber-200/80 rounded-xl space-y-2">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-lg bg-amber-600 text-white font-bold flex items-center justify-center text-xs">
+                  AD
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-slate-900">Quản Trị Viên (Admin)</h4>
+                  <span className="text-[11px] text-amber-800 font-semibold">Vai trò: Quản trị viên</span>
+                </div>
+              </div>
+              <p className="text-xs text-slate-600">Toàn quyền hệ thống, quản lý Cloudflare D1 migrations, cấu hình R2 bucket và phiên bản mô hình ML.</p>
+              <div className="text-[11px] font-mono text-slate-500 pt-1 border-t border-amber-100">
+                Email: admin@eduinsight.cloudflare.com
+              </div>
+            </div>
+          </div>
+
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs text-slate-700 border border-slate-200 rounded-lg">
               <thead className="bg-slate-100 font-bold text-slate-800 uppercase text-[11px]">

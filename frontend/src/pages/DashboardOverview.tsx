@@ -129,10 +129,28 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
             onChange={(e) => setSelectedClass(e.target.value)}
             className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
           >
-            <option value="">Tất cả các lớp</option>
-            {data?.filter_options.classes.map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
+            <option value="">Tất cả các lớp &amp; khoa</option>
+            <optgroup label="Lọc theo Khóa học">
+              <option value="K20">Khóa K20</option>
+              <option value="K21">Khóa K21</option>
+              <option value="K22">Khóa K22</option>
+              <option value="K23">Khóa K23</option>
+              <option value="K24">Khóa K24</option>
+              <option value="K25">Khóa K25</option>
+              <option value="K26">Khóa K26</option>
+            </optgroup>
+            <optgroup label="Lọc theo Khoa / Ngành">
+              <option value="CNTT">Khoa CNTT (Công nghệ thông tin)</option>
+              <option value="KTPM">Khoa KTPM (Kỹ thuật phần mềm)</option>
+              <option value="KHMT">Khoa KHMT (Khoa học máy tính)</option>
+              <option value="TTĐPT">Khoa TTĐPT (Truyền thông đa phương tiện)</option>
+              <option value="KTĐT">Khoa KTĐT (Kỹ thuật điện tử)</option>
+            </optgroup>
+            <optgroup label="Danh sách lớp chi tiết">
+              {data?.filter_options.classes.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </optgroup>
           </select>
 
           <select

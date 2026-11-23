@@ -55,7 +55,17 @@ export default {
         `;
 
         if (classFilter) {
-          studentCountQuery += ` WHERE class_name = '${classFilter.replace(/'/g, "''")}'`;
+          const cf = classFilter.replace(/'/g, "''");
+          studentCountQuery += ` WHERE class_name LIKE '%${cf}%'`;
+          recordsQuery = `
+            SELECT 
+              AVG(lr.final_score) as avg_score,
+              COUNT(CASE WHEN lr.final_score >= 5.0 THEN 1 END) * 100.0 / COUNT(*) as pass_rate,
+              COUNT(lr.record_id) as total_records
+            FROM learning_records lr
+            JOIN students s ON lr.student_id = s.student_id
+            WHERE s.class_name LIKE '%${cf}%'
+          `;
         }
 
         const totalStudentsRes = await env.DB.prepare(studentCountQuery).first();
@@ -131,6 +141,8 @@ export default {
       if (method === 'GET' && path === '/api/students') {
         const search = url.searchParams.get('search') || '';
         const className = url.searchParams.get('class_name') || '';
+        const cohort = url.searchParams.get('cohort') || '';
+        const faculty = url.searchParams.get('faculty') || '';
         const riskLevel = url.searchParams.get('risk_level') || '';
         const sortBy = url.searchParams.get('sort_by') || 'newest';
         const page = parseInt(url.searchParams.get('page') || '1', 10);
@@ -139,11 +151,26 @@ export default {
 
         let conditions: string[] = [];
         if (search) {
-          const s = search.replace(/'/g, "''");
-          conditions.push(`(s.student_id LIKE '%${s}%' OR s.full_name LIKE '%${s}%')`);
+          const s = search.replace(/'/g, "''").trim();
+          conditions.push(`(
+            s.student_id LIKE '%${s}%' OR 
+            s.full_name LIKE '%${s}%' OR 
+            LOWER(s.full_name) LIKE '%${s.toLowerCase()}%' OR
+            UPPER(s.full_name) LIKE '%${s.toUpperCase()}%' OR
+            s.class_name LIKE '%${s}%'
+          )`);
+        }
+        if (cohort) {
+          const coh = cohort.replace(/'/g, "''").trim();
+          conditions.push(`s.class_name LIKE '${coh}%'`);
+        }
+        if (faculty) {
+          const fac = faculty.replace(/'/g, "''").trim();
+          conditions.push(`s.class_name LIKE '%${fac}%'`);
         }
         if (className) {
-          conditions.push(`s.class_name = '${className.replace(/'/g, "''")}'`);
+          const c = className.replace(/'/g, "''").trim();
+          conditions.push(`s.class_name LIKE '%${c}%'`);
         }
         if (riskLevel) {
           conditions.push(`COALESCE(p.risk_level, 'Thấp') = '${riskLevel.replace(/'/g, "''")}'`);
