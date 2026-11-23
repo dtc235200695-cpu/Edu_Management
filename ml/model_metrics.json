@@ -1,0 +1,66 @@
+{
+  "is_demo": true,
+  "demo_notice": "Metrics được huấn luyện trên dữ liệu mô phỏng, chỉ phục vụ demo; không phản ánh năng lực học tập của sinh viên thực tế.",
+  "model_name": "EduInsight Synthetic Learning Model",
+  "algorithm_regression": "Random Forest Regressor",
+  "algorithm_classification": "Random Forest Classifier",
+  "trained_at": "2026-11-23T19:16:16.702953+00:00",
+  "model_version": "demo-1.0",
+  "total_training_samples": 1200,
+  "features": [
+    "attendance_rate",
+    "study_hours",
+    "assignment_score",
+    "quiz_score",
+    "completion_rate",
+    "previous_score"
+  ],
+  "regression_metrics": {
+    "mae": 0.5228,
+    "rmse": 0.6612,
+    "r2_score": 0.7208,
+    "linear_baseline_r2": 0.7642
+  },
+  "classification_metrics": {
+    "accuracy": 0.7833,
+    "macro_precision": 0.769,
+    "macro_recall": 0.7155,
+    "macro_f1": 0.7309,
+    "classes": [
+      "Cao",
+      "Trung bình",
+      "Thấp"
+    ],
+    "confusion_matrix": [
+      [
+        8,
+        7,
+        0
+      ],
+      [
+        3,
+        101,
+        13
+      ],
+      [
+        0,
+        42,
+        126
+      ]
+    ]
+  },
+  "feature_importances": {
+    "attendance_rate": 0.055358,
+    "study_hours": 0.117555,
+    "assignment_score": 0.304139,
+    "quiz_score": 0.377204,
+    "completion_rate": 0.050704,
+    "previous_score": 0.09504
+  },
+  "dataset_info": {
+    "name": "student_learning_data.csv",
+    "record_count": 1500,
+    "train_test_split": "80/20",
+    "random_seed": 42
+  }
+}

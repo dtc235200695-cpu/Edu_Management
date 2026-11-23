@@ -23,3 +23,13 @@ npm-debug.log*
 # OS
 .DS_Store
 Thumbs.db
+
+# Other
+.dev.vars
+
+# Cloudflare
+.wrangler/
+
+# Python
+__pycache__/
+*.py[cod]

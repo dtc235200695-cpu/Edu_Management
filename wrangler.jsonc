@@ -1,0 +1,23 @@
+{
+    "$schema": "./node_modules/wrangler/config-schema.json",
+    "name": "learnwise-d1-api",
+    "main": "./cloudflare/worker/index.js",
+    "compatibility_date": "2025-11-24",
+    "dev": {
+        "port": 8788
+    },
+    "d1_databases": [
+        {
+            "binding": "DB",
+            "database_name": "learnwise-db",
+            "database_id": "536e2b27-4c57-4b9e-9417-df5fc95d7840",
+            "migrations_dir": "./cloudflare/migrations"
+        }
+    ],
+    "r2_buckets": [
+        {
+            "binding": "STORAGE",
+            "bucket_name": "learnwise-storage"
+        }
+    ]
+}

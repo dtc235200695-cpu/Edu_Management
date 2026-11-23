@@ -4,13 +4,16 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "server": "node src/index.js",
-    "start": "node src/index.js"
+    "server": "node src/server.js",
+    "start": "node src/server.js",
+    "test": "node --test"
   },
   "dependencies": {
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "express-rate-limit": "^8.7.5",
     "google-auth-library": "^10.9.1",
-    "jose": "^6.2.18"
+    "jose": "^6.2.18",
+    "nodemailer": "^10.6.1"
   }
 }
