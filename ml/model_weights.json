@@ -1,0 +1,39 @@
+{
+  "model_version": "v1.2.0-rf",
+  "algorithm": "Ridge/Linear + Ensembled Tree Approximation",
+  "features": [
+    "attendance_rate",
+    "study_hours",
+    "assignment_score",
+    "quiz_score",
+    "completion_rate",
+    "previous_score"
+  ],
+  "coefficients": {
+    "attendance_rate": 1.23496,
+    "study_hours": 0.00751,
+    "assignment_score": 0.19341,
+    "quiz_score": 0.28163,
+    "completion_rate": 1.20066,
+    "previous_score": 0.25844
+  },
+  "intercept": 0.08538,
+  "feature_importances": {
+    "attendance_rate": 0.0268,
+    "study_hours": 0.0071,
+    "assignment_score": 0.3215,
+    "quiz_score": 0.2847,
+    "completion_rate": 0.3015,
+    "previous_score": 0.0585
+  },
+  "risk_thresholds": {
+    "high_risk_max": 5.0,
+    "medium_risk_max": 7.0
+  },
+  "metrics_summary": {
+    "mae": 0.3016,
+    "rmse": 0.3731,
+    "r2": 0.9545,
+    "accuracy": 0.9556
+  }
+}

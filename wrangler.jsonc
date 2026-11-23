@@ -1,0 +1,44 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "eduinsight-api",
+	"main": "src/worker.ts",
+	"compatibility_date": "2026-11-20",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	// Triển khai Full-stack: Frontend Pages / Workers Assets
+	"assets": {
+		"directory": "./frontend/dist",
+		"binding": "ASSETS"
+	},
+	// Cơ sở dữ liệu Cloudflare D1
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "eduinsight-db",
+			"database_id": "47aed86e-2a72-45bf-94ad-830715edde10"
+		}
+	],
+	// Lưu trữ Object Storage Cloudflare R2
+	"r2_buckets": [
+		{
+			"binding": "STORAGE",
+			"bucket_name": "eduinsight-storage"
+		}
+	],
+	// Cloudflare Workers AI Binding (Dự đoán & Phân tích văn bản)
+	"ai": {
+		"binding": "AI"
+	},
+	// Tác vụ nền định kỳ (Cron Trigger: 0h00 hàng ngày cập nhật dự đoán rủi ro theo lô)
+	"triggers": {
+		"crons": [
+			"0 0 * * *"
+		]
+	},
+	// Biến môi trường
+	"vars": {
+		"ENVIRONMENT": "production",
+		"APP_NAME": "EduInsight"
+	}
+}

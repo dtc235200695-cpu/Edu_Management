@@ -1,0 +1,82 @@
+{
+  "model_name": "EduInsight Student Performance Predictor",
+  "algorithm_regression": "Random Forest Regressor (100 trees, max_depth=8)",
+  "algorithm_classification": "Random Forest Classifier (100 trees, max_depth=8)",
+  "trained_at": "2026-11-23 15:38:08",
+  "model_version": "v1.2.0-rf",
+  "dataset_info": {
+    "type": "Dữ liệu mô phỏng theo cấu trúc UCI Student Performance",
+    "total_samples": 450,
+    "train_samples": 360,
+    "test_samples": 90,
+    "features": [
+      "attendance_rate",
+      "study_hours",
+      "assignment_score",
+      "quiz_score",
+      "completion_rate",
+      "previous_score"
+    ],
+    "target_regression": "final_score",
+    "target_classification": "risk_level"
+  },
+  "regression_metrics": {
+    "mae": 0.3016,
+    "rmse": 0.3731,
+    "r2_score": 0.9545,
+    "linear_baseline_r2": 0.9612
+  },
+  "classification_metrics": {
+    "accuracy": 0.9556,
+    "macro_precision": 0.9525,
+    "macro_recall": 0.9605,
+    "macro_f1": 0.9558,
+    "classes": [
+      "Thấp",
+      "Trung bình",
+      "Cao"
+    ],
+    "per_class": {
+      "Thấp": {
+        "precision": 0.8846,
+        "recall": 0.9583,
+        "f1_score": 0.92
+      },
+      "Trung bình": {
+        "precision": 0.973,
+        "recall": 0.9231,
+        "f1_score": 0.9474
+      },
+      "Cao": {
+        "precision": 1.0,
+        "recall": 1.0,
+        "f1_score": 1.0
+      }
+    },
+    "confusion_matrix": [
+      [
+        23,
+        1,
+        0
+      ],
+      [
+        3,
+        36,
+        0
+      ],
+      [
+        0,
+        0,
+        27
+      ]
+    ]
+  },
+  "feature_importances": {
+    "attendance_rate": 0.0268,
+    "study_hours": 0.0071,
+    "assignment_score": 0.3215,
+    "quiz_score": 0.2847,
+    "completion_rate": 0.3015,
+    "previous_score": 0.0585
+  }
+}

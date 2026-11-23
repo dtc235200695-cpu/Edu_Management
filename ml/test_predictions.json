@@ -1,0 +1,722 @@
+[
+  {
+    "student_id": "SV2026_258",
+    "actual_score": 5.94,
+    "predicted_score": 5.42,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.52
+  },
+  {
+    "student_id": "SV2026_209",
+    "actual_score": 8.87,
+    "predicted_score": 8.3,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Thấp",
+    "error": 0.57
+  },
+  {
+    "student_id": "SV2026_266",
+    "actual_score": 5.64,
+    "predicted_score": 5.41,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.23
+  },
+  {
+    "student_id": "SV2026_020",
+    "actual_score": 5.29,
+    "predicted_score": 5.1,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.19
+  },
+  {
+    "student_id": "SV2026_111",
+    "actual_score": 7.24,
+    "predicted_score": 7.1,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Thấp",
+    "error": 0.14
+  },
+  {
+    "student_id": "SV2026_089",
+    "actual_score": 6.89,
+    "predicted_score": 7.49,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Thấp",
+    "error": 0.6
+  },
+  {
+    "student_id": "SV2026_189",
+    "actual_score": 6.07,
+    "predicted_score": 5.98,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.09
+  },
+  {
+    "student_id": "SV2026_019",
+    "actual_score": 7.51,
+    "predicted_score": 7.62,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Thấp",
+    "error": 0.11
+  },
+  {
+    "student_id": "SV2026_309",
+    "actual_score": 6.38,
+    "predicted_score": 5.91,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.47
+  },
+  {
+    "student_id": "SV2026_076",
+    "actual_score": 4.34,
+    "predicted_score": 4.6,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.26
+  },
+  {
+    "student_id": "SV2026_346",
+    "actual_score": 5.7,
+    "predicted_score": 5.88,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.18
+  },
+  {
+    "student_id": "SV2026_416",
+    "actual_score": 4.96,
+    "predicted_score": 4.79,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.17
+  },
+  {
+    "student_id": "SV2026_423",
+    "actual_score": 3.76,
+    "predicted_score": 3.17,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.59
+  },
+  {
+    "student_id": "SV2026_367",
+    "actual_score": 5.06,
+    "predicted_score": 5.41,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.35
+  },
+  {
+    "student_id": "SV2026_023",
+    "actual_score": 6.56,
+    "predicted_score": 6.87,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.31
+  },
+  {
+    "student_id": "SV2026_206",
+    "actual_score": 6.7,
+    "predicted_score": 7.01,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.31
+  },
+  {
+    "student_id": "SV2026_375",
+    "actual_score": 8.45,
+    "predicted_score": 7.98,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Thấp",
+    "error": 0.47
+  },
+  {
+    "student_id": "SV2026_074",
+    "actual_score": 3.37,
+    "predicted_score": 3.67,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.3
+  },
+  {
+    "student_id": "SV2026_050",
+    "actual_score": 7.31,
+    "predicted_score": 7.33,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Thấp",
+    "error": 0.02
+  },
+  {
+    "student_id": "SV2026_282",
+    "actual_score": 8.21,
+    "predicted_score": 7.55,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Thấp",
+    "error": 0.66
+  },
+  {
+    "student_id": "SV2026_090",
+    "actual_score": 3.42,
+    "predicted_score": 4.05,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.63
+  },
+  {
+    "student_id": "SV2026_411",
+    "actual_score": 2.85,
+    "predicted_score": 3.03,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.18
+  },
+  {
+    "student_id": "SV2026_328",
+    "actual_score": 4.86,
+    "predicted_score": 4.95,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.09
+  },
+  {
+    "student_id": "SV2026_350",
+    "actual_score": 9.07,
+    "predicted_score": 9.06,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Thấp",
+    "error": 0.01
+  },
+  {
+    "student_id": "SV2026_245",
+    "actual_score": 7.65,
+    "predicted_score": 7.21,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Thấp",
+    "error": 0.44
+  },
+  {
+    "student_id": "SV2026_337",
+    "actual_score": 5.46,
+    "predicted_score": 5.56,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.1
+  },
+  {
+    "student_id": "SV2026_004",
+    "actual_score": 9.5,
+    "predicted_score": 9.19,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Thấp",
+    "error": 0.31
+  },
+  {
+    "student_id": "SV2026_175",
+    "actual_score": 6.14,
+    "predicted_score": 5.95,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.19
+  },
+  {
+    "student_id": "SV2026_373",
+    "actual_score": 5.7,
+    "predicted_score": 5.55,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.15
+  },
+  {
+    "student_id": "SV2026_077",
+    "actual_score": 6.98,
+    "predicted_score": 7.8,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Thấp",
+    "error": 0.82
+  },
+  {
+    "student_id": "SV2026_290",
+    "actual_score": 8.58,
+    "predicted_score": 8.53,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Thấp",
+    "error": 0.05
+  },
+  {
+    "student_id": "SV2026_027",
+    "actual_score": 5.87,
+    "predicted_score": 5.59,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.28
+  },
+  {
+    "student_id": "SV2026_006",
+    "actual_score": 2.98,
+    "predicted_score": 3.47,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.49
+  },
+  {
+    "student_id": "SV2026_392",
+    "actual_score": 5.32,
+    "predicted_score": 5.68,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.36
+  },
+  {
+    "student_id": "SV2026_051",
+    "actual_score": 3.35,
+    "predicted_score": 3.07,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.28
+  },
+  {
+    "student_id": "SV2026_377",
+    "actual_score": 5.88,
+    "predicted_score": 5.99,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.11
+  },
+  {
+    "student_id": "SV2026_123",
+    "actual_score": 6.3,
+    "predicted_score": 5.66,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.64
+  },
+  {
+    "student_id": "SV2026_034",
+    "actual_score": 7.66,
+    "predicted_score": 7.39,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Thấp",
+    "error": 0.27
+  },
+  {
+    "student_id": "SV2026_283",
+    "actual_score": 3.33,
+    "predicted_score": 3.34,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.01
+  },
+  {
+    "student_id": "SV2026_353",
+    "actual_score": 6.75,
+    "predicted_score": 6.13,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.62
+  },
+  {
+    "student_id": "SV2026_119",
+    "actual_score": 4.58,
+    "predicted_score": 4.1,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.48
+  },
+  {
+    "student_id": "SV2026_003",
+    "actual_score": 3.09,
+    "predicted_score": 3.04,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.05
+  },
+  {
+    "student_id": "SV2026_371",
+    "actual_score": 6.11,
+    "predicted_score": 5.8,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.31
+  },
+  {
+    "student_id": "SV2026_080",
+    "actual_score": 5.93,
+    "predicted_score": 5.55,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.38
+  },
+  {
+    "student_id": "SV2026_259",
+    "actual_score": 6.14,
+    "predicted_score": 6.15,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.01
+  },
+  {
+    "student_id": "SV2026_389",
+    "actual_score": 3.79,
+    "predicted_score": 4.2,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.41
+  },
+  {
+    "student_id": "SV2026_361",
+    "actual_score": 3.81,
+    "predicted_score": 3.54,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.27
+  },
+  {
+    "student_id": "SV2026_330",
+    "actual_score": 6.32,
+    "predicted_score": 6.03,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.29
+  },
+  {
+    "student_id": "SV2026_229",
+    "actual_score": 2.81,
+    "predicted_score": 3.03,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.22
+  },
+  {
+    "student_id": "SV2026_431",
+    "actual_score": 8.0,
+    "predicted_score": 8.01,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Thấp",
+    "error": 0.01
+  },
+  {
+    "student_id": "SV2026_343",
+    "actual_score": 5.9,
+    "predicted_score": 5.93,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.03
+  },
+  {
+    "student_id": "SV2026_393",
+    "actual_score": 4.57,
+    "predicted_score": 4.32,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.25
+  },
+  {
+    "student_id": "SV2026_352",
+    "actual_score": 5.52,
+    "predicted_score": 6.11,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.59
+  },
+  {
+    "student_id": "SV2026_101",
+    "actual_score": 5.74,
+    "predicted_score": 5.94,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.2
+  },
+  {
+    "student_id": "SV2026_285",
+    "actual_score": 4.95,
+    "predicted_score": 4.92,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.03
+  },
+  {
+    "student_id": "SV2026_403",
+    "actual_score": 6.95,
+    "predicted_score": 7.08,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.13
+  },
+  {
+    "student_id": "SV2026_419",
+    "actual_score": 8.17,
+    "predicted_score": 8.23,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Thấp",
+    "error": 0.06
+  },
+  {
+    "student_id": "SV2026_144",
+    "actual_score": 6.64,
+    "predicted_score": 5.85,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.79
+  },
+  {
+    "student_id": "SV2026_168",
+    "actual_score": 3.71,
+    "predicted_score": 4.29,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.58
+  },
+  {
+    "student_id": "SV2026_226",
+    "actual_score": 6.51,
+    "predicted_score": 6.71,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.2
+  },
+  {
+    "student_id": "SV2026_054",
+    "actual_score": 7.22,
+    "predicted_score": 7.34,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Thấp",
+    "error": 0.12
+  },
+  {
+    "student_id": "SV2026_442",
+    "actual_score": 5.54,
+    "predicted_score": 6.46,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.92
+  },
+  {
+    "student_id": "SV2026_234",
+    "actual_score": 4.76,
+    "predicted_score": 4.25,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.51
+  },
+  {
+    "student_id": "SV2026_412",
+    "actual_score": 6.96,
+    "predicted_score": 6.39,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.57
+  },
+  {
+    "student_id": "SV2026_369",
+    "actual_score": 9.38,
+    "predicted_score": 8.56,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Thấp",
+    "error": 0.82
+  },
+  {
+    "student_id": "SV2026_420",
+    "actual_score": 5.17,
+    "predicted_score": 4.86,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.31
+  },
+  {
+    "student_id": "SV2026_286",
+    "actual_score": 6.28,
+    "predicted_score": 6.26,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.02
+  },
+  {
+    "student_id": "SV2026_190",
+    "actual_score": 8.61,
+    "predicted_score": 8.3,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Thấp",
+    "error": 0.31
+  },
+  {
+    "student_id": "SV2026_301",
+    "actual_score": 2.88,
+    "predicted_score": 3.13,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.25
+  },
+  {
+    "student_id": "SV2026_339",
+    "actual_score": 3.34,
+    "predicted_score": 3.35,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.01
+  },
+  {
+    "student_id": "SV2026_011",
+    "actual_score": 7.56,
+    "predicted_score": 7.44,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Thấp",
+    "error": 0.12
+  },
+  {
+    "student_id": "SV2026_365",
+    "actual_score": 7.36,
+    "predicted_score": 7.64,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Thấp",
+    "error": 0.28
+  },
+  {
+    "student_id": "SV2026_161",
+    "actual_score": 7.23,
+    "predicted_score": 6.74,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Trung bình",
+    "error": 0.49
+  },
+  {
+    "student_id": "SV2026_284",
+    "actual_score": 7.68,
+    "predicted_score": 6.97,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Thấp",
+    "error": 0.71
+  },
+  {
+    "student_id": "SV2026_349",
+    "actual_score": 4.31,
+    "predicted_score": 4.14,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.17
+  },
+  {
+    "student_id": "SV2026_302",
+    "actual_score": 5.82,
+    "predicted_score": 6.27,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.45
+  },
+  {
+    "student_id": "SV2026_204",
+    "actual_score": 3.07,
+    "predicted_score": 2.64,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.43
+  },
+  {
+    "student_id": "SV2026_005",
+    "actual_score": 6.98,
+    "predicted_score": 6.83,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.15
+  },
+  {
+    "student_id": "SV2026_242",
+    "actual_score": 5.76,
+    "predicted_score": 5.47,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.29
+  },
+  {
+    "student_id": "SV2026_073",
+    "actual_score": 4.37,
+    "predicted_score": 4.81,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.44
+  },
+  {
+    "student_id": "SV2026_300",
+    "actual_score": 5.88,
+    "predicted_score": 5.93,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.05
+  },
+  {
+    "student_id": "SV2026_325",
+    "actual_score": 8.08,
+    "predicted_score": 7.76,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Thấp",
+    "error": 0.32
+  },
+  {
+    "student_id": "SV2026_435",
+    "actual_score": 5.14,
+    "predicted_score": 5.08,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Trung bình",
+    "error": 0.06
+  },
+  {
+    "student_id": "SV2026_363",
+    "actual_score": 4.26,
+    "predicted_score": 4.23,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.03
+  },
+  {
+    "student_id": "SV2026_450",
+    "actual_score": 4.34,
+    "predicted_score": 4.56,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.22
+  },
+  {
+    "student_id": "SV2026_263",
+    "actual_score": 3.12,
+    "predicted_score": 3.07,
+    "actual_risk": "Cao",
+    "predicted_risk": "Cao",
+    "error": 0.05
+  },
+  {
+    "student_id": "SV2026_134",
+    "actual_score": 8.28,
+    "predicted_score": 8.04,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Thấp",
+    "error": 0.24
+  },
+  {
+    "student_id": "SV2026_399",
+    "actual_score": 6.98,
+    "predicted_score": 7.29,
+    "actual_risk": "Trung bình",
+    "predicted_risk": "Thấp",
+    "error": 0.31
+  },
+  {
+    "student_id": "SV2026_260",
+    "actual_score": 8.68,
+    "predicted_score": 9.15,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Thấp",
+    "error": 0.47
+  },
+  {
+    "student_id": "SV2026_202",
+    "actual_score": 8.96,
+    "predicted_score": 9.13,
+    "actual_risk": "Thấp",
+    "predicted_risk": "Thấp",
+    "error": 0.17
+  }
+]

@@ -1,0 +1,26 @@
+{
+  "name": "eduinsight-platform",
+  "version": "1.0.0",
+  "description": "EduInsight - Learning Analytics Platform on Cloudflare (Pages, Workers, D1, R2, ML)",
+  "type": "module",
+  "scripts": {
+    "start": "node dev_server.js",
+    "dev": "node dev_server.js",
+    "build:frontend": "cd frontend && npm run build",
+    "train:ml": "python ml/train_model.py",
+    "evaluate:ml": "python ml/evaluate_model.py",
+    "test": "node tests/test_e2e.js",
+    "deploy": "wrangler deploy"
+  },
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "pages",
+    "d1",
+    "r2",
+    "learning-analytics",
+    "machine-learning"
+  ],
+  "author": "EduInsight Team",
+  "license": "MIT"
+}
