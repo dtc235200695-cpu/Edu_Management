@@ -59,7 +59,7 @@ export default {
           ).bind(cleanSid).first();
 
           if (!student && cleanSid === 'SV2026') {
-            student = { student_id: 'SV2026', full_name: 'Nguyễn Thị Hương Giang', class_name: 'K24-CNTT01' };
+            student = { student_id: 'SV2026', full_name: 'Nguyễn Văn A', class_name2 'K22-CNTT01' };
           }
 
           if (student) {

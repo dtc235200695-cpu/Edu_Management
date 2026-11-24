@@ -2,14 +2,14 @@
 import React, { useState } from 'react';
 import { loginApi } from '../api';
 import { UserPersona, UserRole, USER_PERSONAS } from '../types';
-import { 
-  ShieldCheck, 
-  Lock, 
-  User, 
-  GraduationCap, 
-  ArrowRight, 
-  Sparkles, 
-  AlertCircle, 
+import {
+  ShieldCheck,
+  Lock,
+  User,
+  GraduationCap,
+  ArrowRight,
+  Sparkles,
+  AlertCircle,
   RefreshCw,
   Eye,
   EyeOff,
@@ -115,11 +115,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               <button
                 type="button"
                 onClick={() => handleRoleChange('student')}
-                className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center space-x-1 ${
-                  selectedRole === 'student' 
-                    ? 'bg-purple-600 text-white shadow-xs' 
+                className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center space-x-1 ${selectedRole === 'student'
+                    ? 'bg-purple-600 text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 <span>🎓 Sinh viên</span>
               </button>
@@ -127,11 +126,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               <button
                 type="button"
                 onClick={() => handleRoleChange('lecturer')}
-                className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center space-x-1 ${
-                  selectedRole === 'lecturer' 
-                    ? 'bg-blue-600 text-white shadow-xs' 
+                className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center space-x-1 ${selectedRole === 'lecturer'
+                    ? 'bg-blue-600 text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 <span>👨‍🏫 Giảng viên</span>
               </button>
@@ -139,11 +137,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               <button
                 type="button"
                 onClick={() => handleRoleChange('admin')}
-                className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center space-x-1 ${
-                  selectedRole === 'admin' 
-                    ? 'bg-amber-600 text-white shadow-xs' 
+                className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center space-x-1 ${selectedRole === 'admin'
+                    ? 'bg-amber-600 text-white shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
-                }`}
+                  }`}
               >
                 <span>⚙️ Admin</span>
               </button>
@@ -203,13 +200,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-2.5 px-4 rounded-xl text-white font-bold text-sm shadow-md transition-all flex items-center justify-center space-x-2 ${
-                selectedRole === 'student'
+              className={`w-full py-2.5 px-4 rounded-xl text-white font-bold text-sm shadow-md transition-all flex items-center justify-center space-x-2 ${selectedRole === 'student'
                   ? 'bg-purple-600 hover:bg-purple-700'
                   : selectedRole === 'admin'
-                  ? 'bg-amber-600 hover:bg-amber-700'
-                  : 'bg-blue-600 hover:bg-blue-700'
-              } disabled:opacity-50`}
+                    ? 'bg-amber-600 hover:bg-amber-700'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                } disabled:opacity-50`}
             >
               {loading ? (
                 <>
@@ -228,7 +224,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           {/* Quick Demo 1-Click Access */}
           <div className="pt-3 border-t border-slate-100">
             <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider text-center mb-2.5">
-              Đăng nhập nhanh 1-Click (Dành cho Buổi báo cáo)
+              Đăng nhập nhanh
             </p>
             <div className="grid grid-cols-1 gap-2">
               <button
@@ -238,7 +234,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               >
                 <div className="flex items-center space-x-2">
                   <span className="w-2 h-2 rounded-full bg-purple-600"></span>
-                  <span>Đăng nhập vai <strong>Sinh viên: Hương Giang (SV2026)</strong></span>
+                  <span>Đăng nhập vai <strong>Sinh viên</strong></span>
                 </div>
                 <ArrowRight className="w-3.5 h-3.5 text-purple-500" />
               </button>
