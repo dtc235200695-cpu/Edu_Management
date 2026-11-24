@@ -115,3 +115,20 @@ test("demo learning-path endpoint rejects invalid and missing paths", async () =
     assert.equal(invalidUpdate.status, 400);
     assert.equal(missingStudent.status, 404);
 });
+
+test("demo learning-path endpoint reports an unapplied D1 migration", async () => {
+    const env = createEnv();
+    env.DB.prepare = () => ({
+        async all() {
+            throw new Error("no such table: demo_learning_path_status");
+        },
+    });
+    const response = await handleLearningPathRequest(
+        internalRequest("/internal/learning-path/students/DEMO-0001"),
+        env,
+    );
+    const body = await response.json();
+
+    assert.equal(response.status, 503);
+    assert.match(body.error, /0005_create_demo_learning_path_status\.sql/);
+});

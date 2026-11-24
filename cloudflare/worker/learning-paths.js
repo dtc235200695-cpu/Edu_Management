@@ -47,7 +47,7 @@ export async function handleLearningPathRequest(request, env) {
             /^\/internal\/learning-path\/students\/([^/]+)$/,
         );
         if (request.method === "GET" && getRoute) {
-            return getDemoLearningPath(env, decodeURIComponent(getRoute[1]));
+            return await getDemoLearningPath(env, decodeURIComponent(getRoute[1]));
         }
 
         const updateRoute = url.pathname.match(/^\/internal\/learning-path\/(\d+)$/);
@@ -88,6 +88,15 @@ export async function handleLearningPathRequest(request, env) {
         return json({ success: false, error: "Learning-path endpoint not found." }, 404);
     } catch (error) {
         console.error("Demo learning path request failed:", error.name || "Error");
+        if (
+            error instanceof Error &&
+            error.message.includes("demo_learning_path_status")
+        ) {
+            return json({
+                success: false,
+                error: "D1 chưa có bảng trạng thái lộ trình. Hãy áp dụng migration 0005_create_demo_learning_path_status.sql.",
+            }, 503);
+        }
         return json({
             success: false,
             error: "Không thể tải hoặc cập nhật lộ trình DEMO.",
