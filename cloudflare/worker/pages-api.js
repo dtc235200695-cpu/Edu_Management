@@ -1,10 +1,12 @@
 import { handleStorageRequest } from "./storage.js";
+import { handleLearningPathRequest } from "./learning-paths.js";
 import { handleUserRequest } from "./users.js";
 import { hashPassword, verifyPassword } from "./password-crypto.js";
 import modelMetrics from "../../ml/model_metrics.json" with { type: "json" };
 import {
     createDemoAnalytics,
     createDemoDashboardOverview,
+    demoStudentIdForPathId,
     createDemoPrediction,
     createDemoStudentDetails,
     createDemoStudentList,
@@ -330,6 +332,21 @@ async function invokeStorage(path, request, env, method, body, extraHeaders = {}
         ...env,
         LEARNWISE_API_SECRET: "pages-function-internal",
     });
+}
+
+function invokeLearningPath(path, request, env, method, body) {
+    const headers = new Headers({
+        Authorization: "Bearer pages-function-internal",
+    });
+    const init = { method, headers };
+    if (body !== undefined) {
+        headers.set("Content-Type", "application/json");
+        init.body = JSON.stringify(body);
+    }
+    return handleLearningPathRequest(
+        new Request(new URL(path, request.url), init),
+        { ...env, LEARNWISE_API_SECRET: "pages-function-internal" },
+    );
 }
 
 async function handleLogin(request, env) {
@@ -925,6 +942,45 @@ async function handleRequest(context) {
                 created_at: object.uploaded_at,
             })),
         }, 200, { "Cache-Control": "no-store" });
+    }
+    const learningPathRoute = path.match(/^\/api\/students\/([^/]+)\/learning-path$/);
+    if (method === "GET" && learningPathRoute) {
+        const session = await requireRole(request, env, ["student", "lecturer", "admin"]);
+        let studentId;
+        try {
+            studentId = decodeURIComponent(learningPathRoute[1]);
+        } catch {
+            return json({ success: false, error: "Mã sinh viên không hợp lệ." }, 400);
+        }
+        if (session.user.role === "student" && session.user.studentId !== studentId) {
+            return json({ success: false, error: "Bạn chỉ được xem lộ trình của mình." }, 403);
+        }
+        return invokeLearningPath(
+            `/internal/learning-path/students/${encodeURIComponent(studentId)}`,
+            request,
+            env,
+            "GET",
+        );
+    }
+    const updateLearningPathRoute = path.match(/^\/api\/learning-path\/(\d+)$/);
+    if (method === "PATCH" && updateLearningPathRoute) {
+        const session = await requireRole(request, env, ["student", "lecturer", "admin"]);
+        const pathId = Number(updateLearningPathRoute[1]);
+        const studentId = demoStudentIdForPathId(pathId);
+        if (!studentId) {
+            return json({ success: false, error: "Mã lộ trình không hợp lệ." }, 400);
+        }
+        if (session.user.role === "student" && session.user.studentId !== studentId) {
+            return json({ success: false, error: "Bạn chỉ được cập nhật lộ trình của mình." }, 403);
+        }
+        const body = await readJson(request);
+        return invokeLearningPath(
+            `/internal/learning-path/${pathId}`,
+            request,
+            env,
+            "PATCH",
+            body,
+        );
     }
     if (path === "/api/ml/model-info") {
         await requireRole(request, env, ["admin", "lecturer"]);

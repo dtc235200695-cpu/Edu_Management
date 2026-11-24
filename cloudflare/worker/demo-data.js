@@ -4,6 +4,32 @@ const COURSES = [
     { course_id: "DEMO-CS103", course_name: "Cơ sở dữ liệu" },
     { course_id: "DEMO-CS104", course_name: "Phân tích dữ liệu" },
 ];
+const LEARNING_PATH_TOPICS = [
+    {
+        topic_name: "Thuật toán cơ bản và hàm",
+        resource_url: "https://docs.python.org/3/tutorial/",
+        learning_materials: "Ôn kiểu dữ liệu, biểu thức, rẽ nhánh, vòng lặp và cách chia chương trình thành hàm.",
+        practice_exercises: "Viết hàm kiểm tra số nguyên tố, tính tổng dãy số và xử lý danh sách đầu vào.",
+    },
+    {
+        topic_name: "Danh sách, ngăn xếp và hàng đợi",
+        resource_url: "https://runestone.academy/ns/books/published/pythonds3/index.html",
+        learning_materials: "Học cách cài đặt danh sách liên kết, ngăn xếp, hàng đợi và phân tích độ phức tạp cơ bản.",
+        practice_exercises: "Cài đặt stack/queue và giải bài toán dấu ngoặc cân bằng, hàng đợi tác vụ.",
+    },
+    {
+        topic_name: "Truy vấn SQL, JOIN và lọc dữ liệu",
+        resource_url: "https://sqlbolt.com/",
+        learning_materials: "Ôn SELECT, WHERE, GROUP BY, JOIN và cách kết hợp dữ liệu từ nhiều bảng.",
+        practice_exercises: "Viết truy vấn thống kê điểm trung bình theo lớp và tìm sinh viên chưa hoàn thành bài.",
+    },
+    {
+        topic_name: "Làm sạch dữ liệu và phân tích khám phá",
+        resource_url: "https://pandas.pydata.org/docs/getting_started/intro_tutorials/",
+        learning_materials: "Thực hành đọc dữ liệu, xử lý giá trị thiếu, kiểm tra ngoại lệ và tóm tắt dữ liệu.",
+        practice_exercises: "Dùng pandas làm sạch một bảng CSV nhỏ và tạo thống kê mô tả cho các cột số.",
+    },
+];
 
 const CLASSES = [
     "K20-CNTT-01",
@@ -319,6 +345,68 @@ export function createDemoStudentDetails(studentId, additionalStudents = []) {
             topic_name: record.course_name,
             score: record.final_score,
         })),
+    };
+}
+
+export function demoStudentIdForPathId(pathId) {
+    if (!Number.isSafeInteger(pathId) || pathId < 11) return null;
+    const studentNumber = Math.floor(pathId / 10);
+    const topicNumber = pathId % 10;
+    if (studentNumber < 1 || topicNumber < 1 || topicNumber > LEARNING_PATH_TOPICS.length) {
+        return null;
+    }
+    return `DEMO-${String(studentNumber).padStart(4, "0")}`;
+}
+
+export function createDemoLearningPath(studentId, additionalStudents = [], savedStatuses = []) {
+    const match = /^DEMO-(\d{4,})$/.exec(studentId);
+    if (!match) return null;
+    const studentNumber = Number(match[1]);
+    if (
+        !Number.isSafeInteger(studentNumber) ||
+        studentNumber < 1 ||
+        studentNumber > Math.floor((Number.MAX_SAFE_INTEGER - 4) / 10) ||
+        studentId !== `DEMO-${String(studentNumber).padStart(4, "0")}`
+    ) return null;
+
+    const records = allRecords(additionalStudents).filter(
+        (record) => record.student_id === studentId,
+    );
+    if (records.length !== LEARNING_PATH_TOPICS.length) return null;
+
+    const statusByPathId = new Map(savedStatuses.map(({ path_id, status }) => [
+        Number(path_id),
+        status,
+    ]));
+    const learningPath = records.map((record, index) => {
+        const pathId = studentNumber * 10 + index + 1;
+        const score = record.final_score;
+        const priority = score < 5
+            ? "Ưu tiên cao"
+            : score < 7
+                ? "Ưu tiên trung bình"
+                : score < 8.5
+                    ? "Ưu tiên thấp"
+                    : "Mở rộng";
+        return {
+            path_id: pathId,
+            student_id: studentId,
+            course_id: record.course_id,
+            topic_name: LEARNING_PATH_TOPICS[index].topic_name,
+            priority,
+            resource_url: LEARNING_PATH_TOPICS[index].resource_url,
+            status: statusByPathId.get(pathId) || "Chưa hoàn thành",
+            current_score: score,
+            target_goal: "Mục tiêu: đạt ít nhất 7/10 ở chủ đề này.",
+            learning_materials: LEARNING_PATH_TOPICS[index].learning_materials,
+            practice_exercises: LEARNING_PATH_TOPICS[index].practice_exercises,
+        };
+    });
+
+    return {
+        success: true,
+        data_mode: "synthetic_demo",
+        learning_path: learningPath,
     };
 }
 

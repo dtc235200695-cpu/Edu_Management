@@ -163,11 +163,32 @@ test("authenticated staff can load explicitly labeled synthetic model metrics", 
     assert.equal(body.classification_metrics.confusion_matrix.length, 3);
 });
 
-test("learning paths remain unavailable until validated topic results exist", async () => {
+test("authenticated staff can load and update a labeled demo learning path", async () => {
     const response = await requestAsAdmin("/api/students/DEMO-0001/learning-path");
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.success, true);
+    assert.equal(body.data_mode, "synthetic_demo");
+    assert.equal(body.learning_path.length, 4);
+    assert.ok(body.learning_path.every((item) => item.student_id === "DEMO-0001"));
+
+    const updateResponse = await requestAsAdmin("/api/learning-path/11", {
+        method: "PATCH",
+        body: { status: "Đã hoàn thành" },
+    });
+    const updateBody = await updateResponse.json();
+    assert.equal(updateResponse.status, 200);
+    assert.equal(updateBody.data_mode, "synthetic_demo");
+});
+
+test("real student IDs do not receive synthetic learning paths", async () => {
+    const response = await requestAsAdmin(
+        "/api/students/SV2026-001/learning-path",
+    );
     const body = await response.json();
 
     assert.equal(response.status, 503);
     assert.equal(body.success, false);
-    assert.match(body.error, /chưa khả dụng/i);
+    assert.match(body.error, /dữ liệu sinh viên thật chưa được tích hợp/i);
 });

@@ -1,4 +1,5 @@
 import { handleHealthRequest } from "./health.js";
+import { handleLearningPathRequest } from "./learning-paths.js";
 import { handlePasswordRequest } from "./passwords.js";
 import { handleStorageRequest } from "./storage.js";
 import { handleUserRequest } from "./users.js";
@@ -15,7 +16,8 @@ export default {
             await handleHealthRequest(request, env) ||
             await handleUserRequest(request, env) ||
             await handlePasswordRequest(request, env) ||
-            await handleStorageRequest(request, env);
+            await handleStorageRequest(request, env) ||
+            await handleLearningPathRequest(request, env);
         return response || Response.json({ error: "Not found" }, { status: 404 });
     }
 };

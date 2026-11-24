@@ -3,8 +3,10 @@ import test from "node:test";
 import {
     createDemoAnalytics,
     createDemoDashboardOverview,
+    createDemoLearningPath,
     createDemoStudentDetails,
     createDemoStudentList,
+    demoStudentIdForPathId,
 } from "./demo-data.js";
 
 test("demo dashboard returns deterministic synthetic aggregates", () => {
@@ -67,4 +69,21 @@ test("demo list and dashboard include persistent demo student entries", () => {
     assert.equal(overview.total_students, 61);
     assert.equal(details.student.student_id, "DEMO-0061");
     assert.equal(details.learning_records.length, 4);
+});
+
+test("demo learning paths use synthetic course scores and accept persisted statuses", () => {
+    const savedStatuses = [{ path_id: 11, status: "Đã hoàn thành" }];
+    const path = createDemoLearningPath("DEMO-0001", [], savedStatuses);
+
+    assert.equal(path.data_mode, "synthetic_demo");
+    assert.equal(path.learning_path.length, 4);
+    assert.equal(path.learning_path[0].status, "Đã hoàn thành");
+    assert.ok(path.learning_path.every((item) =>
+        item.student_id === "DEMO-0001" &&
+        item.current_score >= 0 &&
+        item.current_score <= 10,
+    ));
+    assert.equal(demoStudentIdForPathId(11), "DEMO-0001");
+    assert.equal(demoStudentIdForPathId(19), null);
+    assert.equal(createDemoLearningPath("SV2026-001"), null);
 });

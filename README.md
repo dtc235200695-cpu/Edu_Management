@@ -94,9 +94,16 @@ created with `DEMO-*` IDs and generated demo names; they are stored separately
 in the D1 `demo_students` table. The ML Model page reads the synthetic
 `ml/model_metrics.json` artifact and labels it as demo data. The prediction
 endpoint returns a labeled heuristic estimate, not the trained ML model.
-Learning-path APIs return an explicit unavailable response until an authorized
-dataset with validated topic results has been integrated. Never present demo
-metrics or estimates as real learner data.
+Learning paths for `DEMO-*` students are generated from synthetic course
+scores, labeled as demo data, and their completion statuses are stored in the
+D1 `demo_learning_path_status` table. Real student IDs still receive an
+unavailable response until an authorized dataset with validated topic results
+has been integrated. Never present demo metrics, estimates, or paths as real
+learner data.
+
+Apply the pending D1 migrations before deploying the Pages Functions. The local
+Node API proxies demo learning-path requests to the Cloudflare Worker, so
+deploy the updated Worker with `npx wrangler deploy` when using that API.
 
 ## Generate the ML demo artifacts
 

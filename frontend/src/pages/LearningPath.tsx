@@ -24,6 +24,7 @@ export const LearningPath: React.FC<LearningPathProps> = ({ initialStudentId, is
   const [studentId, setStudentId] = useState<string>(initialStudentId || '');
   const [studentList, setStudentList] = useState<Student[]>([]);
   const [pathItems, setPathItems] = useState<LearningPathItem[]>([]);
+  const [dataMode, setDataMode] = useState<'synthetic_demo' | null>(null);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -55,11 +56,13 @@ export const LearningPath: React.FC<LearningPathProps> = ({ initialStudentId, is
   const loadPath = async (id: string) => {
     setLoading(true);
     setError(null);
+    setDataMode(null);
     setPathItems([]);
     try {
       const res = await fetchLearningPath(id);
       if (res.success) {
         setPathItems(res.learning_path || []);
+        setDataMode(res.data_mode || null);
       }
     } catch (cause) {
       setError(getErrorMessage(cause, 'Không thể tải lộ trình học tập.'));
@@ -76,9 +79,9 @@ export const LearningPath: React.FC<LearningPathProps> = ({ initialStudentId, is
         await updatePathStatus(item.path_id, nextStatus);
       }
       // Cập nhật state local
-      setPathItems(prev => prev.map(p => p.topic_name === item.topic_name ? { ...p, status: nextStatus } : p));
+      setPathItems(prev => prev.map(p => p.path_id === item.path_id ? { ...p, status: nextStatus } : p));
     } catch (err) {
-      alert('Không thể cập nhật trạng thái');
+      alert(getErrorMessage(err, 'Không thể cập nhật trạng thái.'));
     } finally {
       setUpdatingId(null);
     }
@@ -97,7 +100,11 @@ export const LearningPath: React.FC<LearningPathProps> = ({ initialStudentId, is
           </div>
           <div>
             <h3 className="text-sm font-bold text-slate-800">Cá nhân hóa lộ trình học tập</h3>
-            <p className="text-xs text-slate-500">Được sinh tự động dựa trên kết quả kiểm tra từng chủ đề</p>
+            <p className="text-xs text-slate-500">
+              {dataMode === 'synthetic_demo'
+                ? 'Lộ trình DEMO được xây dựng từ điểm mô phỏng; không dùng để đánh giá sinh viên thật.'
+                : 'Được sinh tự động dựa trên kết quả kiểm tra từng chủ đề'}
+            </p>
           </div>
         </div>
 
@@ -118,6 +125,11 @@ export const LearningPath: React.FC<LearningPathProps> = ({ initialStudentId, is
         </div>}
       </div>
       {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+      {dataMode === 'synthetic_demo' && (
+        <p role="note" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          Dữ liệu lộ trình là dữ liệu mô phỏng DEMO, không phải kết quả học tập thật.
+        </p>
+      )}
 
       {/* Progress Card */}
       {!error && (

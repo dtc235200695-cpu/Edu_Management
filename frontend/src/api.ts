@@ -115,7 +115,10 @@ export async function predictOutcome(data: {
 }
 
 export async function fetchLearningPath(studentId: string) {
-  return request<ApiResponse & { learning_path: LearningPathItem[] }>(
+  return request<ApiResponse & {
+    data_mode?: 'synthetic_demo';
+    learning_path: LearningPathItem[];
+  }>(
     `/students/${encodeURIComponent(studentId)}/learning-path`,
   );
 }

@@ -3,7 +3,13 @@ import path from "node:path";
 import express from "express";
 import { projectRoot } from "../config.js";
 import { requireRole, requireSession } from "../middleware/session.js";
-import { fetchWorkerHealth, requestStorage } from "../services/cloudflare.js";
+import { demoStudentIdForPathId } from "../../../cloudflare/worker/demo-data.js";
+import {
+  fetchWorkerHealth,
+  jsonWorkerRequest,
+  requestStorage,
+  requestWorker,
+} from "../services/cloudflare.js";
 
 const router = express.Router();
 const staffOnly = [requireSession, requireRole(["admin", "lecturer"])];
@@ -99,22 +105,53 @@ router.get("/api/ml/model-info", ...staffOnly, async (_req, res) => {
   return res.set("Cache-Control", "no-store").json({ ...metrics, success: true });
 });
 
-const unavailableLearningPath = (_req, res) => res.status(503).json({
-  success: false,
-  error: "Lộ trình học tập chưa khả dụng vì dữ liệu kết quả theo chủ đề chưa được tích hợp và xác thực.",
-});
-
 router.get(
   "/api/students/:studentId/learning-path",
   requireSession,
   requireRole(["student", "lecturer", "admin"]),
-  unavailableLearningPath,
+  async (req, res, next) => {
+    if (req.user.role === "student" && req.user.studentId !== req.params.studentId) {
+      return res.status(403).json({
+        success: false,
+        error: "Bạn chỉ được xem lộ trình của mình.",
+      });
+    }
+    try {
+      const result = await requestWorker(
+        `/internal/learning-path/students/${encodeURIComponent(req.params.studentId)}`,
+      );
+      return res.set("Cache-Control", "no-store").json(result);
+    } catch (error) {
+      return next(error);
+    }
+  },
 );
 router.patch(
   "/api/learning-path/:pathId",
   requireSession,
   requireRole(["student", "lecturer", "admin"]),
-  unavailableLearningPath,
+  async (req, res, next) => {
+    const pathId = Number(req.params.pathId);
+    const studentId = demoStudentIdForPathId(pathId);
+    if (!studentId) {
+      return res.status(400).json({ success: false, error: "Mã lộ trình không hợp lệ." });
+    }
+    if (req.user.role === "student" && req.user.studentId !== studentId) {
+      return res.status(403).json({
+        success: false,
+        error: "Bạn chỉ được cập nhật lộ trình của mình.",
+      });
+    }
+    try {
+      const result = await requestWorker(
+        `/internal/learning-path/${pathId}`,
+        jsonWorkerRequest("PATCH", req.body),
+      );
+      return res.json(result);
+    } catch (error) {
+      return next(error);
+    }
+  },
 );
 
 router.get(
