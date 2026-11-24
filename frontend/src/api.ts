@@ -164,6 +164,13 @@ export async function fetchCurrentUser() {
   return request<{ user: UserPersona | null }>('/me');
 }
 
+export async function updateProfile(name: string) {
+  return request<ApiResponse & { user?: UserPersona }>(
+    '/profile',
+    jsonRequest('PATCH', { name }),
+  );
+}
+
 export async function fetchAppConfig() {
   return request<{
     googleEnabled: boolean;

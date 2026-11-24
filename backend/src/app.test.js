@@ -22,9 +22,18 @@ test("admin and R2 APIs reject requests without an authenticated session", async
     const adminResponse = await fetch(`${baseUrl}/api/admin/users`);
     const studentsResponse = await fetch(`${baseUrl}/api/students?limit=50`);
     const storageResponse = await fetch(`${baseUrl}/api/data/import-history`);
+    const profileResponse = await fetch(`${baseUrl}/api/profile`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: config.appOrigin,
+      },
+      body: JSON.stringify({ name: "Updated Name" }),
+    });
     assert.equal(adminResponse.status, 401);
     assert.equal(studentsResponse.status, 401);
     assert.equal(storageResponse.status, 401);
+    assert.equal(profileResponse.status, 401);
   });
 });
 

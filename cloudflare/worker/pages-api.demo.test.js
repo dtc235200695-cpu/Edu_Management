@@ -17,16 +17,30 @@ const user = {
 };
 
 async function requestAsAdmin(path, { method = "GET", body } = {}) {
+    const record = { ...user };
     const env = {
         SESSION_SECRET: "demo-test-session-secret-with-more-than-32-bytes",
         DB: {
-            prepare() {
+            prepare(sql) {
+                let values = [];
                 const statement = {
-                    first: async () => user,
+                    first: async () => ({ ...record }),
                     all: async () => ({ results: [] }),
-                    run: async () => ({ meta: { changes: 1 } }),
+                    run: async () => {
+                        if (sql.includes("SET name = ?, updated_at = CURRENT_TIMESTAMP")) {
+                            const [name, id] = values;
+                            if (record.id === id) record.name = name;
+                        }
+                        return { meta: { changes: 1 } };
+                    },
                 };
-                return { ...statement, bind: () => statement };
+                return {
+                    ...statement,
+                    bind: (...boundValues) => {
+                        values = boundValues;
+                        return statement;
+                    },
+                };
             },
         },
     };
@@ -41,6 +55,29 @@ async function requestAsAdmin(path, { method = "GET", body } = {}) {
     });
     return handlePublicApiRequest({ request, env });
 }
+
+test("authenticated profile API updates the display name but preserves account identity", async () => {
+    const response = await requestAsAdmin("/api/profile", {
+        method: "PATCH",
+        body: { name: "Updated Display Name" },
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.success, true);
+    assert.equal(body.user.name, "Updated Display Name");
+    assert.equal(body.user.email, user.email);
+    assert.equal(body.user.role, user.role);
+});
+
+test("profile API rejects empty display names", async () => {
+    const response = await requestAsAdmin("/api/profile", {
+        method: "PATCH",
+        body: { name: "   " },
+    });
+
+    assert.equal(response.status, 400);
+});
 
 test("authenticated dashboard API returns labeled synthetic data", async () => {
     const response = await requestAsAdmin("/api/dashboard/overview?class_name=K20");

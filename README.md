@@ -30,6 +30,10 @@ configured separately through `ADMIN_EMAIL`; administrators can later assign
 other roles and unique student IDs.
 Student IDs must be 3–30 characters using letters, numbers, `.`, `_`, or `-`;
 passwords must be at least 8 characters.
+Users can update their display name from the personal information page.
+Account email, role, and student ID are read-only there and remain managed by
+the authentication and administrator workflows. Existing accounts keep their
+app-managed display name when they sign in with Google again.
 For a single-process preview of a production build, run `npm run build` and
 then `npm start`; open `http://localhost:8787`.
 
@@ -78,9 +82,11 @@ npm run deploy
 `npm run deploy` builds the frontend and publishes it together with the Pages
 Functions. Use this command after code changes to update the production site.
 The first setup still requires applying migrations and configuring secrets.
-For automatic deployments on pushes to `main`, add the Cloudflare API token as
-the GitHub repository Actions secret `CLOUDFLARE_API_TOKEN` (Cloudflare Pages
-Edit permission) and set the repository Actions variable `CLOUDFLARE_ACCOUNT_ID`.
+For automatic deployments on pushes to `main`, the workflow applies pending
+D1 migrations before deploying Pages. Add a Cloudflare API token with
+Cloudflare Pages Edit and D1 Edit permissions as the GitHub repository Actions
+secret `CLOUDFLARE_API_TOKEN`, and set the repository Actions variable
+`CLOUDFLARE_ACCOUNT_ID`.
 
 Set `MAIL_FROM` in the Pages production variables after its sender domain is
 verified with Resend. Update the Google OAuth client's authorized redirect URI

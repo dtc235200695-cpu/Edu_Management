@@ -45,16 +45,23 @@ function createDb(existingUser = null) {
                                 };
                                 return { meta: { changes: 1 } };
                             }
-                            if (sql.includes("SET google_sub = ?, name = ?, picture = ?")) {
-                                const [googleSub, name, picture, role, status, id] = values;
+                            if (sql.includes("SET google_sub = ?, picture = ?")) {
+                                const [googleSub, picture, role, status, id] = values;
                                 if (user?.id === id) {
                                     Object.assign(user, {
                                         google_sub: googleSub,
-                                        name,
                                         picture,
                                         role,
                                         status,
                                     });
+                                    return { meta: { changes: 1 } };
+                                }
+                                return { meta: { changes: 0 } };
+                            }
+                            if (sql.includes("SET name = ?, updated_at = CURRENT_TIMESTAMP")) {
+                                const [name, id] = values;
+                                if (user?.id === id && user.status === "active") {
+                                    user.name = name;
                                     return { meta: { changes: 1 } };
                                 }
                                 return { meta: { changes: 0 } };
@@ -105,7 +112,7 @@ test("existing pending Google users are activated as students", async () => {
     const db = createDb({
         id: "pending-user",
         email: "student@example.test",
-        name: "Test User",
+        name: "Existing Display Name",
         role: "pending",
         status: "pending",
         google_sub: null,
@@ -114,6 +121,30 @@ test("existing pending Google users are activated as students", async () => {
     assert.equal(response.status, 200);
     assert.equal(body.user.role, "student");
     assert.equal(body.user.status, "active");
+    assert.equal(body.user.name, "Existing Display Name");
+});
+
+test("users can update their own profile name without changing account permissions", async () => {
+    const db = createDb({
+        id: "profile-user",
+        email: "student@example.test",
+        name: "Old Name",
+        role: "student",
+        status: "active",
+        student_id: "SV001",
+    });
+    const request = new Request("https://worker.example/internal/users/profile-user/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: "New Name" }),
+    });
+    const response = await handleUserRequest(request, { DB: db });
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.user.name, "New Name");
+    assert.equal(body.user.role, "student");
+    assert.equal(body.user.student_id, "SV001");
 });
 
 test("Google sign-in does not reactivate suspended accounts", async () => {

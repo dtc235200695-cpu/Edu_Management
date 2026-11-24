@@ -737,6 +737,32 @@ async function handleRequest(context) {
         const session = await requireRole(request, env, ["student", "lecturer", "admin"]);
         return json({ user: session.user }, 200, { "Cache-Control": "no-store" });
     }
+    if (method === "PATCH" && path === "/api/profile") {
+        const session = await requireRole(request, env, ["student", "lecturer", "admin"]);
+        const { name } = await readJson(request);
+        if (!validName(name)) {
+            return json({
+                success: false,
+                error: "Họ tên phải có từ 1 đến 120 ký tự.",
+            }, 400);
+        }
+        const result = await env.DB.prepare(`
+            UPDATE users
+            SET name = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ? AND status = 'active'
+        `).bind(name.trim(), session.record.id).run();
+        if (result.meta?.changes !== 1) {
+            return json({
+                success: false,
+                error: "Không tìm thấy tài khoản đang hoạt động.",
+            }, 404);
+        }
+        const record = await getUserByIdentifier(env, session.record.id);
+        return json({
+            success: true,
+            user: publicUser(record),
+        }, 200, { "Cache-Control": "no-store" });
+    }
     if (method === "GET" && path === "/api/cloudflare/health") {
         await requireRole(request, env, ["admin"]);
         const [result] = await Promise.all([

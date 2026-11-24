@@ -152,13 +152,12 @@ export async function handleUserRequest(request, env) {
                     : user.status;
             await env.DB.prepare(`
                 UPDATE users
-                SET google_sub = ?, name = ?, picture = ?,
+                SET google_sub = ?, picture = ?,
                     role = ?, status = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = ? AND (google_sub IS NULL OR google_sub = ?)
             `).bind(
                 google_sub,
-                name.trim(),
                 picture,
                 role,
                 status,
@@ -169,6 +168,29 @@ export async function handleUserRequest(request, env) {
                 SELECT ${USER_COLUMNS} FROM users WHERE id = ?
             `).bind(user.id).first();
             return Response.json({ created, user });
+        }
+
+        const profileRoute = url.pathname.match(/^\/internal\/users\/([^/]+)\/profile$/);
+        if (profileRoute && request.method === "PATCH") {
+            const id = decodeURIComponent(profileRoute[1]);
+            const { name } = await readJson(request);
+            if (!validName(name)) {
+                return invalidRequest("A valid profile name is required.");
+            }
+            const result = await env.DB.prepare(`
+                UPDATE users
+                SET name = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ? AND status = 'active'
+            `).bind(name.trim(), id).run();
+            if (result.meta.changes !== 1) {
+                return Response.json({ error: "User not found or inactive." }, { status: 404 });
+            }
+            const user = await env.DB.prepare(`
+                SELECT id, email, name, picture, role, student_id,
+                       status, must_change_password
+                FROM users WHERE id = ?
+            `).bind(id).first();
+            return Response.json({ user });
         }
 
         if (request.method === "POST" && url.pathname === "/internal/users") {

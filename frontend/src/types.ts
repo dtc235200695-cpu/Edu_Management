@@ -8,6 +8,7 @@ export type PageId =
   | 'learning-path'
   | 'data-management'
   | 'ml-model'
+  | 'profile'
   | 'settings';
 
 export interface Student {

@@ -12,7 +12,8 @@ import {
   Settings,
   GraduationCap,
   Cloud,
-  LogOut
+  LogOut,
+  UserRound
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -24,9 +25,9 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, onSelectPage, onLogout }) => {
   const allowedPages: Record<UserPersona['role'], PageId[]> = {
-    student: ['dashboard', 'learning-path', 'prediction'],
-    lecturer: ['dashboard', 'students', 'analytics', 'prediction', 'learning-path', 'data-management', 'ml-model'],
-    admin: ['dashboard', 'students', 'analytics', 'prediction', 'learning-path', 'data-management', 'ml-model', 'settings'],
+    student: ['dashboard', 'learning-path', 'prediction', 'profile'],
+    lecturer: ['dashboard', 'students', 'analytics', 'prediction', 'learning-path', 'data-management', 'ml-model', 'profile'],
+    admin: ['dashboard', 'students', 'analytics', 'prediction', 'learning-path', 'data-management', 'ml-model', 'profile', 'settings'],
   };
   const navItems = [
     { id: 'dashboard' as PageId, label: 'Dashboard tổng quan', icon: LayoutDashboard },
@@ -34,6 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentPage, currentUser, onSe
     { id: 'analytics' as PageId, label: 'Phân tích dữ liệu học tập', icon: BarChart2 },
     { id: 'prediction' as PageId, label: 'Dự đoán kết quả ML', icon: Sparkles },
     { id: 'learning-path' as PageId, label: 'Lộ trình cá nhân hóa', icon: Compass },
+    { id: 'profile' as PageId, label: 'Thông tin cá nhân', icon: UserRound },
     { id: 'data-management' as PageId, label: 'Quản lý dữ liệu & R2', icon: Database },
     { id: 'ml-model' as PageId, label: 'Quản lý mô hình ML', icon: Cpu },
     { id: 'settings' as PageId, label: 'Cài đặt hệ thống', icon: Settings },

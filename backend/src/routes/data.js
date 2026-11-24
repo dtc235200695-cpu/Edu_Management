@@ -7,6 +7,7 @@ import { demoStudentIdForPathId } from "../../../cloudflare/worker/demo-data.js"
 import {
   fetchWorkerHealth,
   jsonWorkerRequest,
+  publicUser,
   requestStorage,
   requestWorker,
 } from "../services/cloudflare.js";
@@ -234,6 +235,33 @@ router.get("/api/data/import-history", ...staffOnly, async (_req, res) => {
 
 router.get("/api/profile", requireSession, (req, res) => {
   res.set("Cache-Control", "no-store").json({ user: req.user });
+});
+
+router.patch("/api/profile", requireSession, async (req, res, next) => {
+  try {
+    const { name } = req.body || {};
+    if (
+      typeof name !== "string" ||
+      !name.trim() ||
+      name.trim().length > 120 ||
+      /[\r\n]/.test(name.trim())
+    ) {
+      return res.status(400).json({
+        success: false,
+        error: "Họ tên phải có từ 1 đến 120 ký tự.",
+      });
+    }
+    const result = await requestWorker(
+      `/internal/users/${encodeURIComponent(req.user.id)}/profile`,
+      jsonWorkerRequest("PATCH", { name: name.trim() }),
+    );
+    return res.set("Cache-Control", "no-store").json({
+      success: true,
+      user: publicUser(result.user),
+    });
+  } catch (error) {
+    return next(error);
+  }
 });
 
 export default router;

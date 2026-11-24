@@ -46,6 +46,11 @@ const SystemSettings = React.lazy(() =>
     default: SystemSettings,
   })),
 );
+const ProfilePage = React.lazy(() =>
+  import('./pages/ProfilePage').then(({ ProfilePage }) => ({
+    default: ProfilePage,
+  })),
+);
 
 const pageTitleMap: Record<PageId, string> = {
   dashboard: 'Dashboard tổng quan',
@@ -55,11 +60,12 @@ const pageTitleMap: Record<PageId, string> = {
   'learning-path': 'Cá nhân hóa lộ trình học tập',
   'data-management': 'Quản lý dữ liệu & Lưu trữ R2',
   'ml-model': 'Quản lý mô hình Machine Learning',
+  profile: 'Thông tin cá nhân',
   settings: 'Cài đặt hệ thống',
 };
 
 const rolePages: Record<UserPersona['role'], PageId[]> = {
-  student: ['dashboard', 'learning-path', 'prediction'],
+  student: ['dashboard', 'learning-path', 'prediction', 'profile'],
   lecturer: [
     'dashboard',
     'students',
@@ -68,6 +74,7 @@ const rolePages: Record<UserPersona['role'], PageId[]> = {
     'learning-path',
     'data-management',
     'ml-model',
+    'profile',
   ],
   admin: [
     'dashboard',
@@ -77,6 +84,7 @@ const rolePages: Record<UserPersona['role'], PageId[]> = {
     'learning-path',
     'data-management',
     'ml-model',
+    'profile',
     'settings',
   ],
 };
@@ -234,6 +242,12 @@ export const App: React.FC = () => {
             )}
             {currentPage === 'data-management' && <DataManagement />}
             {currentPage === 'ml-model' && <MLModelManagement />}
+            {currentPage === 'profile' && (
+              <ProfilePage
+                user={currentUser}
+                onProfileUpdated={setCurrentUser}
+              />
+            )}
             {currentPage === 'settings' && currentUser.role === 'admin' && <SystemSettings />}
           </Suspense>
         </main>
