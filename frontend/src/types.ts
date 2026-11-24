@@ -193,7 +193,7 @@ export interface ModelInfo {
     train_test_split: string;
     random_seed: number;
   };
-  algorithm_regression: string;
+  algorithm_regression: string | null;
   algorithm_classification: string;
   trained_at: string;
   model_version: string;
@@ -204,7 +204,7 @@ export interface ModelInfo {
     rmse: number;
     r2_score: number;
     baseline_r2: number;
-  };
+  } | null;
   classification_metrics: {
     accuracy: number;
     macro_precision: number;

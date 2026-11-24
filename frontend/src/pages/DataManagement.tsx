@@ -60,11 +60,15 @@ export const DataManagement: React.FC = () => {
         }
 
         const headers = lines[0].split(',').map(h => h.trim());
-        const expectedHeaders = ['student_id', 'attendance_rate', 'study_hours', 'assignment_score', 'quiz_score', 'completion_rate', 'previous_score', 'final_score'];
+        const expectedHeaders = ['student_id', 'attendance_rate', 'study_hours', 'assignment_score', 'quiz_score', 'completion_rate', 'previous_score'];
         const missing = expectedHeaders.filter(h => !headers.includes(h));
 
         if (missing.length > 0) {
           setPreviewError(`File CSV thiếu các cột bắt buộc: ${missing.join(', ')}`);
+          return;
+        }
+        if (!headers.includes('final_score') && !headers.includes('risk_level')) {
+          setPreviewError('File CSV cần có cột final_score hoặc risk_level để đánh giá mô hình.');
           return;
         }
 

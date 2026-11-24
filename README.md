@@ -40,13 +40,16 @@ then `npm start`; open `http://localhost:8787`.
 The Cloudflare status panel checks the deployed Worker, D1, and private R2
 bucket. CSV imports are proxied through the backend to R2; files are not
 currently indexed into D1. The bucket is private and uploads are limited to
-10 MB. The ML Model page lists those imports; selecting a CSV evaluates a
-Ridge regressor and Gaussian Naive Bayes risk classifier against a deterministic holdout from
-that file. Model evaluation requires at least five rows and the numeric columns
+10 MB. The ML Model page lists those imports; selecting a CSV evaluates its
+Gaussian Naive Bayes risk classifier and, when `final_score` is present, its
+Ridge regressor against a deterministic holdout. Model evaluation requires at
+least five rows and the numeric columns
 `attendance_rate`, `study_hours`, `assignment_score`, `quiz_score`,
-`completion_rate`, `previous_score`, and `final_score`; `risk_level` is optional
-and derived from `final_score` when absent. At most 5,000 rows are evaluated.
-Only metrics are returned to the browser; the CSV remains private in R2.
+`completion_rate`, and `previous_score`, plus either `final_score` or
+`risk_level`. When `final_score` is absent, only classification metrics are
+shown; the app does not invent regression targets. At most 5,000 rows are
+evaluated. Only metrics are returned to the browser; the CSV remains private in
+R2.
 
 For another environment, set the same random `LEARNWISE_API_SECRET` in the
 local `.env` and as a Wrangler Worker secret. Configure D1 migrations and

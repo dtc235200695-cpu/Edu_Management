@@ -205,6 +205,8 @@ export const MLModelManagement: React.FC = () => {
     );
   }
 
+  const hasRegression = Boolean(model.regression_metrics);
+
   // Feature Importance Data for BarChart
   const featureData = Object.entries(model.feature_importances).map(([feat, val]) => {
     const labelMap: Record<string, string> = {
@@ -244,7 +246,12 @@ export const MLModelManagement: React.FC = () => {
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1">
-              Thuật toán: <strong className="text-slate-800">{model.algorithm_regression}</strong> &amp; <strong className="text-slate-800">{model.algorithm_classification}</strong>
+              Thuật toán: {model.algorithm_regression && (
+                <>
+                  <strong className="text-slate-800">{model.algorithm_regression}</strong> &amp;{' '}
+                </>
+              )}
+              <strong className="text-slate-800">{model.algorithm_classification}</strong>
             </p>
           </div>
 
@@ -268,21 +275,23 @@ export const MLModelManagement: React.FC = () => {
                 Dataset: {model.dataset_info.record_count} dòng mô phỏng; chia tập {model.dataset_info.train_test_split}; seed {model.dataset_info.random_seed}.
               </span>
             )}
-            {model.data_mode === 'uploaded_csv' && (
-              <div role="note" className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900">
-                {model.metrics_notice}
-                {model.dataset_info && (
-                  <span className="block mt-1">
-                    File: {model.dataset_info.name}; {model.dataset_info.record_count} dòng; tập huấn luyện/kiểm tra {model.dataset_info.train_test_split}; seed {model.dataset_info.random_seed}.
-                  </span>
-                )}
-              </div>
+          </div>
+        )}
+        {model.data_mode === 'uploaded_csv' && (
+          <div role="note" className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900">
+            {model.metrics_notice}
+            {model.dataset_info && (
+              <span className="block mt-1">
+                File: {model.dataset_info.name}; {model.dataset_info.record_count} dòng; tập huấn luyện/kiểm tra {model.dataset_info.train_test_split}; seed {model.dataset_info.random_seed}.
+              </span>
             )}
           </div>
         )}
 
         {/* Core Metrics Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mt-4">
+        <div className={`grid grid-cols-2 gap-3 mt-4 ${hasRegression ? 'sm:grid-cols-4 lg:grid-cols-7' : 'sm:grid-cols-4'}`}>
+          {model.regression_metrics && (
+            <>
           <div className="p-3 bg-blue-50 rounded-xl text-center">
             <span className="text-[11px] font-bold text-blue-700 uppercase">MAE</span>
             <p className="text-lg font-extrabold text-blue-950 mt-0.5">{model.regression_metrics.mae}</p>
@@ -300,6 +309,8 @@ export const MLModelManagement: React.FC = () => {
             <p className="text-lg font-extrabold text-emerald-950 mt-0.5">{model.regression_metrics.r2_score}</p>
             <span className="text-[10px] text-emerald-600">Điểm trên tập kiểm tra</span>
           </div>
+            </>
+          )}
 
           <div className="p-3 bg-teal-50 rounded-xl text-center">
             <span className="text-[11px] font-bold text-teal-700 uppercase">Accuracy</span>
@@ -336,11 +347,15 @@ export const MLModelManagement: React.FC = () => {
       </div>
 
       {/* Two Column Layout: Feature Importance & Actual vs Predicted */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className={`grid grid-cols-1 gap-6 ${hasRegression ? 'lg:grid-cols-2' : ''}`}>
         {/* Feature Importance BarChart */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
           <h4 className="text-sm font-bold text-slate-800 mb-1">Mức độ ảnh hưởng của các đặc trưng (Feature Importance)</h4>
-          <p className="text-xs text-slate-500 mb-4">Tỷ trọng tuyệt đối của các hệ số Ridge được huấn luyện từ file CSV đang chọn.</p>
+          <p className="text-xs text-slate-500 mb-4">
+            {hasRegression
+              ? 'Tỷ trọng tuyệt đối của các hệ số Ridge được huấn luyện từ file CSV đang chọn.'
+              : 'Mức độ phân biệt các nhóm risk_level dựa trên đặc trưng của file CSV.'}
+          </p>
 
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -355,7 +370,7 @@ export const MLModelManagement: React.FC = () => {
           </div>
         </div>
 
-        {/* Actual vs Predicted Scatter */}
+        {model.regression_metrics && (
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
           <h4 className="text-sm font-bold text-slate-800 mb-1">So sánh Giá trị Thực tế vs Dự đoán (Actual vs Predicted)</h4>
           <p className="text-xs text-slate-500 mb-4">Kết quả dự đoán trên các dòng được giữ lại để kiểm tra, không dùng khi huấn luyện.</p>
@@ -372,6 +387,7 @@ export const MLModelManagement: React.FC = () => {
             </ResponsiveContainer>
           </div>
         </div>
+        )}
       </div>
 
       {/* Confusion Matrix Section */}

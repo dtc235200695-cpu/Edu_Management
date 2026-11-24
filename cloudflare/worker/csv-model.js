@@ -83,10 +83,15 @@ function validateRows(text) {
     if (new Set(headers).size !== headers.length) {
         throw invalidCsv("CSV có tên cột bị lặp.");
     }
-    const requiredColumns = [...FEATURES, "final_score"];
+    const requiredColumns = FEATURES;
     const missingColumns = requiredColumns.filter((column) => !headers.includes(column));
     if (missingColumns.length) {
         throw invalidCsv(`CSV thiếu cột bắt buộc: ${missingColumns.join(", ")}.`);
+    }
+    const hasRegression = headers.includes("final_score");
+    const hasRiskLevel = headers.includes("risk_level");
+    if (!hasRegression && !hasRiskLevel) {
+        throw invalidCsv("CSV cần có ít nhất một cột mục tiêu: final_score hoặc risk_level.");
     }
     if (rows.length - 1 > MAX_ROWS) {
         throw invalidCsv(`Mỗi file chỉ hỗ trợ tối đa ${MAX_ROWS} dòng dữ liệu.`);
@@ -106,9 +111,9 @@ function validateRows(text) {
             }
             record[feature] = value;
         }
-        const rawScore = values[indexes.final_score].trim();
-        const score = rawScore === "" ? Number.NaN : Number(rawScore);
-        if (!Number.isFinite(score) || score < 0 || score > 10) {
+        const rawScore = hasRegression ? values[indexes.final_score].trim() : "";
+        const score = rawScore === "" ? null : Number(rawScore);
+        if (hasRegression && (!Number.isFinite(score) || score < 0 || score > 10)) {
             throw invalidCsv(`Điểm final_score không hợp lệ ở dòng ${rowIndex + 2}.`);
         }
         if (
@@ -121,11 +126,13 @@ function validateRows(text) {
         ) {
             throw invalidCsv(`Chỉ số ngoài phạm vi cho phép ở dòng ${rowIndex + 2}.`);
         }
-        const providedRisk = indexes.risk_level === undefined
-            ? ""
-            : values[indexes.risk_level].trim();
-        if (providedRisk && !RISK_CLASSES.includes(providedRisk)) {
+        const rawRisk = hasRiskLevel ? values[indexes.risk_level].trim() : "";
+        const providedRisk = normalizeRiskLevel(rawRisk);
+        if (rawRisk && !providedRisk) {
             throw invalidCsv(`risk_level không hợp lệ ở dòng ${rowIndex + 2}.`);
+        }
+        if (!providedRisk && score === null) {
+            throw invalidCsv(`Thiếu risk_level ở dòng ${rowIndex + 2}.`);
         }
         record.final_score = score;
         record.risk_level = providedRisk ||
@@ -136,7 +143,25 @@ function validateRows(text) {
     if (data.length < 5) {
         throw invalidCsv("Cần ít nhất 5 dòng dữ liệu để đánh giá mô hình.");
     }
-    return data;
+    return { records: data, hasRegression };
+}
+
+function normalizeRiskLevel(value) {
+    const normalized = value.toLocaleLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[_-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    if (normalized.includes("cao") || normalized.includes("high")) return "Cao";
+    if (normalized.includes("thap") || normalized.includes("low") || normalized.includes("safe")) {
+        return "Thấp";
+    }
+    if (normalized.includes("trung binh") || normalized.includes("medium") ||
+        normalized.includes("moderate")) {
+        return "Trung bình";
+    }
+    return null;
 }
 
 function seededShuffle(values) {
@@ -300,28 +325,67 @@ function calculateClassificationMetrics(actual, predicted) {
     };
 }
 
+function calculateClassificationImportances(records) {
+    const normalizedRecords = records.map(normalizedFeatures);
+    const overallMeans = FEATURES.map((_feature, index) => (
+        normalizedRecords.reduce((sum, values) => sum + values[index], 0) /
+        normalizedRecords.length
+    ));
+    const classMeans = RISK_CLASSES.map((label) => {
+        const values = normalizedRecords.filter(
+            (_features, index) => records[index].risk_level === label,
+        );
+        if (!values.length) return null;
+        return {
+            weight: values.length / normalizedRecords.length,
+            means: FEATURES.map((_feature, index) => (
+                values.reduce((sum, record) => sum + record[index], 0) / values.length
+            )),
+        };
+    }).filter(Boolean);
+    const weights = FEATURES.map((_feature, index) => classMeans.reduce(
+        (sum, group) => sum + group.weight * (group.means[index] - overallMeans[index]) ** 2,
+        0,
+    ));
+    const total = weights.reduce((sum, value) => sum + value, 0);
+    return Object.fromEntries(FEATURES.map((feature, index) => [
+        feature,
+        total ? round(weights[index] / total) : 0,
+    ]));
+}
+
 function round(value) {
     return Math.round(value * 10000) / 10000;
 }
 
 export function createCsvModelInfo(text, fileName) {
-    const records = validateRows(text);
+    const { records, hasRegression } = validateRows(text);
     const shuffled = seededShuffle(records);
     const testSize = Math.max(2, Math.floor(records.length * 0.2));
     const testRecords = shuffled.slice(0, testSize);
     const trainRecords = shuffled.slice(testSize);
-    const coefficients = trainRegressor(trainRecords);
     const classifier = trainClassifier(trainRecords);
-    const baselineScore = trainRecords.reduce((sum, record) => sum + record.final_score, 0) /
-        trainRecords.length;
-    const actualScores = testRecords.map((record) => record.final_score);
-    const predictedScores = testRecords.map((record) => predictScore(coefficients, record));
-    const featureWeights = coefficients.slice(1).map(Math.abs);
-    const weightTotal = featureWeights.reduce((sum, value) => sum + value, 0);
-    const featureImportances = Object.fromEntries(FEATURES.map((feature, index) => [
-        feature,
-        weightTotal ? round(featureWeights[index] / weightTotal) : 0,
-    ]));
+    const coefficients = hasRegression ? trainRegressor(trainRecords) : null;
+    const baselineScore = hasRegression
+        ? trainRecords.reduce((sum, record) => sum + record.final_score, 0) / trainRecords.length
+        : null;
+    const actualScores = hasRegression
+        ? testRecords.map((record) => record.final_score)
+        : [];
+    const predictedScores = hasRegression
+        ? testRecords.map((record) => predictScore(coefficients, record))
+        : [];
+    let featureImportances;
+    if (hasRegression) {
+        const featureWeights = coefficients.slice(1).map(Math.abs);
+        const weightTotal = featureWeights.reduce((sum, value) => sum + value, 0);
+        featureImportances = Object.fromEntries(FEATURES.map((feature, index) => [
+            feature,
+            weightTotal ? round(featureWeights[index] / weightTotal) : 0,
+        ]));
+    } else {
+        featureImportances = calculateClassificationImportances(trainRecords);
+    }
     const fileLabel = typeof fileName === "string" && fileName
         ? fileName
         : "selected.csv";
@@ -331,17 +395,15 @@ export function createCsvModelInfo(text, fileName) {
         data_mode: "uploaded_csv",
         is_demo: false,
         model_name: `EduInsight CSV Model - ${fileLabel}`,
-        algorithm_regression: "Ridge Regression",
+        algorithm_regression: hasRegression ? "Ridge Regression" : null,
         algorithm_classification: "Gaussian Naive Bayes",
         trained_at: new Date().toISOString(),
-        model_version: "csv-ridge-nb-v1",
+        model_version: hasRegression ? "csv-ridge-nb-v1" : "csv-nb-v1",
         total_training_samples: trainRecords.length,
         features: FEATURES,
-        regression_metrics: calculateRegressionMetrics(
-            actualScores,
-            predictedScores,
-            baselineScore,
-        ),
+        regression_metrics: hasRegression
+            ? calculateRegressionMetrics(actualScores, predictedScores, baselineScore)
+            : null,
         classification_metrics: calculateClassificationMetrics(
             testRecords.map((record) => record.risk_level),
             testRecords.map((record) => predictRisk(classifier, trainRecords.length, record)),
@@ -353,10 +415,12 @@ export function createCsvModelInfo(text, fileName) {
             train_test_split: `${trainRecords.length}/${testRecords.length}`,
             random_seed: SEED,
         },
-        actual_vs_predicted: testRecords.map((record, index) => ({
+        actual_vs_predicted: hasRegression ? testRecords.map((record, index) => ({
             actual: record.final_score,
             predicted: round(predictedScores[index]),
-        })),
-        metrics_notice: "Metrics được tính từ file CSV đã chọn trên tập kiểm tra; độ tin cậy phụ thuộc số lượng và chất lượng dữ liệu.",
+        })) : [],
+        metrics_notice: hasRegression
+            ? "Metrics được tính từ file CSV đã chọn trên tập kiểm tra; độ tin cậy phụ thuộc số lượng và chất lượng dữ liệu."
+            : "CSV không có final_score nên chỉ đánh giá phân loại risk_level; không hiển thị metrics hồi quy.",
     };
 }

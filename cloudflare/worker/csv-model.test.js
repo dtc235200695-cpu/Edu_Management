@@ -31,6 +31,30 @@ function makeCsv(reverseScores = false) {
     return [header.join(","), ...rows].join("\r\n");
 }
 
+function makeRiskOnlyCsv() {
+    const header = [
+        "student_id",
+        "attendance_rate",
+        "study_hours",
+        "assignment_score",
+        "quiz_score",
+        "completion_rate",
+        "previous_score",
+        "risk_level",
+    ];
+    const rows = Array.from({ length: 10 }, (_, index) => [
+        `SV-${index + 1}`,
+        (0.5 + index * 0.04).toFixed(2),
+        String(3 + index * 2),
+        String(3 + index * 0.6),
+        String(3.2 + index * 0.55),
+        (0.45 + index * 0.05).toFixed(2),
+        String(3.5 + index * 0.5),
+        index < 3 ? "High Risk" : index < 7 ? "Medium" : "Low Risk",
+    ].join(","));
+    return [header.join(","), ...rows].join("\n");
+}
+
 test("CSV model metrics are computed for the selected dataset and test split", () => {
     const metrics = createCsvModelInfo(makeCsv(), "scores-a.csv");
     const repeatedMetrics = createCsvModelInfo(makeCsv(), "scores-a.csv");
@@ -44,6 +68,18 @@ test("CSV model metrics are computed for the selected dataset and test split", (
     assert.deepEqual(metrics.actual_vs_predicted, repeatedMetrics.actual_vs_predicted);
     assert.equal(metrics.classification_metrics.confusion_matrix.length, 3);
     assert.ok(Object.values(metrics.feature_importances).some((value) => value > 0));
+});
+
+test("risk-only CSV returns classification metrics without fabricated regression results", () => {
+    const metrics = createCsvModelInfo(makeRiskOnlyCsv(), "risk-only.csv");
+
+    assert.equal(metrics.regression_metrics, null);
+    assert.equal(metrics.algorithm_regression, null);
+    assert.equal(metrics.algorithm_classification, "Gaussian Naive Bayes");
+    assert.equal(metrics.classification_metrics.confusion_matrix.length, 3);
+    assert.equal(metrics.dataset_info.record_count, 10);
+    assert.deepEqual(metrics.actual_vs_predicted, []);
+    assert.match(metrics.metrics_notice, /không có final_score/i);
 });
 
 test("CSV model metrics change when the selected CSV's target values change", () => {
