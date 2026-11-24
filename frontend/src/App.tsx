@@ -29,6 +29,7 @@ export const App: React.FC = () => {
   });
 
   const [currentPage, setCurrentPage] = useState<PageId>('dashboard');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [selectedStudentForPath, setSelectedStudentForPath] = useState<string>(() => {
     return currentUser?.studentId || 'SV2026';
   });
@@ -90,24 +91,30 @@ export const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar - Fixed Left */}
+      {/* Sidebar - Responsive Drawer Navigation */}
       <Sidebar 
         currentPage={currentPage} 
-        onSelectPage={setCurrentPage} 
+        onSelectPage={(p) => {
+          setCurrentPage(p);
+          setIsMobileMenuOpen(false);
+        }} 
         onLogout={handleLogout}
+        isMobileOpen={isMobileMenuOpen}
+        onCloseMobile={() => setIsMobileMenuOpen(false)}
       />
 
-      {/* Main Content Area - Offset by Sidebar width */}
-      <div className="flex-1 ml-64 flex flex-col min-h-screen">
+      {/* Main Content Area - Responsive with no fixed margin on mobile */}
+      <div className="flex-1 lg:ml-64 flex flex-col min-h-screen w-full overflow-x-hidden">
         <Header 
           pageTitle={pageTitleMap[currentPage]} 
           currentUser={currentUser}
           onSwitchRole={handleSwitchRole}
           onSearchChange={handleHeaderSearchChange}
           onLogout={handleLogout}
+          onToggleMobileMenu={() => setIsMobileMenuOpen(prev => !prev)}
         />
 
-        <main className="flex-1 p-8 overflow-y-auto max-w-7xl w-full mx-auto">
+        <main className="flex-1 p-3.5 sm:p-5 lg:p-8 overflow-y-auto max-w-7xl w-full mx-auto space-y-6">
           {currentPage === 'dashboard' && (
             <DashboardOverview 
               onNavigateToStudent={handleNavigateToStudent}

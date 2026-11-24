@@ -250,8 +250,8 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
       {currentUser?.role === 'student' && (
         <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-5 text-white shadow-md flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center space-x-3.5">
-            <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center font-bold text-xl text-white shadow-inner">
-              🎓
+            <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white shadow-inner shrink-0">
+              <GraduationCap className="w-6 h-6 text-white" />
             </div>
             <div>
               <div className="flex items-center space-x-2">
@@ -709,8 +709,8 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
 
       {/* Add / Edit Modal with Dynamic Class Builder */}
       {(isAddModalOpen || editingStudent) && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-4 z-50">
-          <form onSubmit={handleSaveStudent} className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6 space-y-4 animate-in fade-in duration-150">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 z-50">
+          <form onSubmit={handleSaveStudent} className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-4 sm:p-6 space-y-4 animate-in fade-in duration-150">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <h3 className="text-base font-bold text-slate-900">

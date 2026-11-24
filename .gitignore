@@ -43,3 +43,6 @@ Thumbs.db
 .idea/
 *.swp
 scratch*.js
+scratch*.cjs
+DTDM/
+Edu_Management/

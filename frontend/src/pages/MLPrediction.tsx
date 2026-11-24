@@ -59,15 +59,15 @@ export const MLPrediction: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Intro Banner */}
-      <div className="bg-linear-to-r from-blue-900 via-blue-800 to-indigo-900 text-white p-6 rounded-2xl shadow-sm">
+      <div className="bg-gradient-to-r from-blue-900 via-blue-800 to-indigo-900 text-white p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-sm">
         <div className="flex items-start justify-between">
           <div>
             <div className="flex items-center space-x-2 text-blue-200 text-xs font-semibold uppercase tracking-wider mb-2">
               <Cpu className="w-4 h-4 text-blue-400" />
               <span>Cloudflare Edge ML Engine • Random Forest Ensemble</span>
             </div>
-            <h2 className="text-2xl font-bold">Dự đoán kết quả học tập & Đánh giá rủi ro</h2>
-            <p className="text-sm text-blue-100/90 mt-1 max-w-2xl">
+            <h2 className="text-xl sm:text-2xl font-bold">Dự đoán kết quả học tập & Đánh giá rủi ro</h2>
+            <p className="text-xs sm:text-sm text-blue-100/90 mt-1 max-w-2xl">
               Hệ thống sử dụng mô hình học máy Random Forest Regressor & Classifier được huấn luyện bằng Python scikit-learn
               và chạy suy luận trực tiếp trên Cloudflare Workers Edge với độ trễ &lt; 5ms.
             </p>
@@ -78,9 +78,9 @@ export const MLPrediction: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6">
         {/* Prediction Form */}
-        <div className="lg:col-span-7 bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
+        <div className="lg:col-span-7 bg-white p-4 sm:p-6 rounded-xl sm:rounded-2xl border border-slate-200 shadow-2xs">
           <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
             <h3 className="text-base font-bold text-slate-800 flex items-center space-x-2">
               <Sliders className="w-5 h-5 text-blue-600" />

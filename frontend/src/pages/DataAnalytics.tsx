@@ -73,11 +73,11 @@ export const DataAnalytics: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Top Selector Tabs */}
-      <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
+      <div className="bg-white p-2.5 sm:p-3 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between gap-2 overflow-x-auto">
         <div className="flex space-x-2">
           <button
             onClick={() => setActiveTab('correlation')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+            className={`shrink-0 flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
               activeTab === 'correlation'
                 ? 'bg-blue-600 text-white shadow-2xs'
                 : 'text-slate-600 hover:bg-slate-100'
@@ -89,7 +89,7 @@ export const DataAnalytics: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('topics')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+            className={`shrink-0 flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
               activeTab === 'topics'
                 ? 'bg-blue-600 text-white shadow-2xs'
                 : 'text-slate-600 hover:bg-slate-100'
@@ -101,7 +101,7 @@ export const DataAnalytics: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('courses')}
-            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+            className={`shrink-0 flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
               activeTab === 'courses'
                 ? 'bg-blue-600 text-white shadow-2xs'
                 : 'text-slate-600 hover:bg-slate-100'
@@ -114,7 +114,7 @@ export const DataAnalytics: React.FC = () => {
 
         <button
           onClick={loadAnalytics}
-          className="p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+          className="shrink-0 p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
           title="Tải lại số liệu"
         >
           <RefreshCw className="w-4 h-4" />
