@@ -22,6 +22,8 @@ function createRecords() {
             student_id: `DEMO-${String(studentNumber).padStart(4, "0")}`,
             full_name: `Sinh viên DEMO ${String(studentNumber).padStart(3, "0")}`,
             class_name: CLASSES[index % CLASSES.length],
+            created_at: "2026-01-01T00:00:00.000Z",
+            is_seed_data: true,
         };
 
         return COURSES.map((course, courseIndex) => {
@@ -75,6 +77,68 @@ function createRecords() {
 
 const DEMO_RECORDS = createRecords();
 
+function createAdditionalRecords(students) {
+    return students.flatMap((student) => COURSES.map((course) => {
+        const attendanceRate = Number(student.attendance_rate);
+        const completionRate = Number(student.completion_rate);
+        const studyHours = Number(student.study_hours);
+        const assignmentScore = Number(student.assignment_score);
+        const quizScore = Number(student.quiz_score);
+        const previousScore = Number(student.previous_score);
+        const finalScore = calculateScore({
+            attendance_rate: attendanceRate,
+            study_hours: studyHours,
+            assignment_score: assignmentScore,
+            quiz_score: quizScore,
+            completion_rate: completionRate,
+            previous_score: previousScore,
+        });
+        const predictedScore = round(
+            finalScore * 0.6 +
+            attendanceRate * 10 * 0.2 +
+            completionRate * 10 * 0.2,
+        );
+        return {
+            ...student,
+            ...course,
+            attendance_rate: attendanceRate,
+            study_hours: studyHours,
+            assignment_score: assignmentScore,
+            quiz_score: quizScore,
+            completion_rate: completionRate,
+            previous_score: previousScore,
+            final_score: finalScore,
+            predicted_score: predictedScore,
+            risk_level: getRiskLevel(predictedScore, attendanceRate),
+            is_seed_data: false,
+        };
+    }));
+}
+
+function calculateScore(input) {
+    return round(
+        input.assignment_score * 0.25 +
+        input.quiz_score * 0.25 +
+        input.previous_score * 0.2 +
+        input.completion_rate * 10 * 0.15 +
+        input.attendance_rate * 10 * 0.15,
+    );
+}
+
+function getRiskLevel(score, attendanceRate) {
+    return score < 5.5 || attendanceRate < 0.65
+        ? "Cao"
+        : score < 7
+            ? "Trung bình"
+            : "Thấp";
+}
+
+function allRecords(additionalStudents = []) {
+    return additionalStudents.length
+        ? [...DEMO_RECORDS, ...createAdditionalRecords(additionalStudents)]
+        : DEMO_RECORDS;
+}
+
 function average(records, field) {
     if (records.length === 0) return 0;
     return records.reduce((sum, record) => sum + record[field], 0) / records.length;
@@ -87,8 +151,8 @@ function matchesClass(className, record) {
         record.class_name.split("-").includes(className);
 }
 
-function filteredRecords({ className, courseId } = {}) {
-    return DEMO_RECORDS.filter((record) =>
+function filteredRecords({ className, courseId } = {}, additionalStudents = []) {
+    return allRecords(additionalStudents).filter((record) =>
         matchesClass(className, record) &&
         (!courseId || record.course_id === courseId),
     );
@@ -124,8 +188,8 @@ function summarizeStudents(records) {
     });
 }
 
-export function createDemoDashboardOverview(filters = {}) {
-    const records = filteredRecords(filters);
+export function createDemoDashboardOverview(filters = {}, additionalStudents = []) {
+    const records = filteredRecords(filters, additionalStudents);
     const students = summarizeStudents(records);
     const riskCounts = Object.fromEntries(RISK_LEVELS.map((level) => [level, 0]));
     const scoreDistribution = {
@@ -172,7 +236,8 @@ export function createDemoDashboardOverview(filters = {}) {
     };
 }
 
-export function createDemoAnalytics() {
+export function createDemoAnalytics(additionalStudents = []) {
+    const records = allRecords(additionalStudents);
     const topicDefinitions = [
         { topic_name: "Chuyên cần", field: "attendance_rate", scale: 10 },
         { topic_name: "Bài tập", field: "assignment_score", scale: 1 },
@@ -183,18 +248,18 @@ export function createDemoAnalytics() {
     return {
         success: true,
         data_mode: "synthetic_demo",
-        study_hours_correlation: DEMO_RECORDS.map((record) => ({
+        study_hours_correlation: records.map((record) => ({
             student_id: record.student_id,
             study_hours: record.study_hours,
             final_score: record.final_score,
         })),
-        attendance_correlation: DEMO_RECORDS.map((record) => ({
+        attendance_correlation: records.map((record) => ({
             student_id: record.student_id,
             attendance_pct: round(record.attendance_rate * 100),
             final_score: record.final_score,
         })),
         topic_performance: topicDefinitions.map(({ topic_name, field, scale }) => {
-            const values = DEMO_RECORDS.map((record) => record[field] * scale);
+            const values = records.map((record) => record[field] * scale);
             return {
                 topic_name,
                 avg_score: round(values.reduce((sum, value) => sum + value, 0) / values.length),
@@ -202,13 +267,136 @@ export function createDemoAnalytics() {
             };
         }),
         course_scores: COURSES.map((course) => {
-            const records = DEMO_RECORDS.filter(
+            const courseRecords = records.filter(
                 (record) => record.course_id === course.course_id,
             );
             return {
                 course_name: course.course_name,
-                avg_score: round(average(records, "final_score")),
+                avg_score: round(average(courseRecords, "final_score")),
             };
         }),
+    };
+}
+
+export function createDemoStudentList(additionalStudents = []) {
+    const records = allRecords(additionalStudents);
+    const summaries = summarizeStudents(records);
+    return summaries.map((summary) => {
+        const studentRecords = records.filter(
+            (record) => record.student_id === summary.student_id,
+        );
+        const first = studentRecords[0];
+        return {
+            ...summary,
+            average_score: summary.final_score,
+            completion_rate: round(average(studentRecords, "completion_rate")),
+            created_at: first.created_at,
+            is_seed_data: first.is_seed_data,
+        };
+    });
+}
+
+export function createDemoStudentDetails(studentId, additionalStudents = []) {
+    const records = allRecords(additionalStudents).filter(
+        (record) => record.student_id === studentId,
+    );
+    if (records.length === 0) return null;
+
+    const student = createDemoStudentList(additionalStudents).find(
+        (item) => item.student_id === studentId,
+    );
+    return {
+        success: true,
+        data_mode: "synthetic_demo",
+        student,
+        learning_records: records.map((record) => ({
+            attendance_rate: record.attendance_rate,
+            study_hours: record.study_hours,
+            quiz_score: record.quiz_score,
+        })),
+        topic_results: records.map((record, index) => ({
+            topic_id: index + 1,
+            topic_name: record.course_name,
+            score: record.final_score,
+        })),
+    };
+}
+
+export function createDemoPrediction(input) {
+    const rawScore =
+        0.15 * input.attendance_rate * 10 +
+        0.12 * input.study_hours / 3 +
+        0.22 * input.assignment_score +
+        0.2 * input.quiz_score +
+        0.13 * input.completion_rate * 10 +
+        0.18 * input.previous_score +
+        0.25 * (input.assignment_score * input.quiz_score / 10 - 4);
+    const predictedScore = round(Math.min(10, Math.max(0, rawScore)));
+    const riskLevel = predictedScore < 5
+        ? "Cao"
+        : predictedScore < 7
+            ? "Trung bình"
+            : "Thấp";
+    const factors = [
+        {
+            factor: "Chuyên cần",
+            value: input.attendance_rate,
+            threshold: 0.8,
+            current_value: `${Math.round(input.attendance_rate * 100)}%`,
+            recommended: "Ít nhất 80%",
+            advice: "Tham gia đầy đủ các buổi học.",
+        },
+        {
+            factor: "Giờ tự học",
+            value: input.study_hours,
+            threshold: 8,
+            current_value: `${input.study_hours} giờ/tuần`,
+            recommended: "Ít nhất 8 giờ/tuần",
+            advice: "Phân bổ thời gian tự học đều trong tuần.",
+        },
+        {
+            factor: "Điểm bài tập",
+            value: input.assignment_score,
+            threshold: 6,
+            current_value: `${input.assignment_score}/10`,
+            recommended: "Ít nhất 6/10",
+            advice: "Ôn lại các bài tập chưa đạt.",
+        },
+        {
+            factor: "Điểm kiểm tra",
+            value: input.quiz_score,
+            threshold: 6,
+            current_value: `${input.quiz_score}/10`,
+            recommended: "Ít nhất 6/10",
+            advice: "Luyện tập thêm với các nội dung còn yếu.",
+        },
+        {
+            factor: "Tiến độ hoàn thành",
+            value: input.completion_rate,
+            threshold: 0.7,
+            current_value: `${Math.round(input.completion_rate * 100)}%`,
+            recommended: "Ít nhất 70%",
+            advice: "Hoàn thành các nội dung học tập còn dang dở.",
+        },
+    ];
+    const factorsToImprove = factors
+        .filter((factor) => factor.value < factor.threshold)
+        .map(({ value, threshold, ...factor }) => ({
+            ...factor,
+            severity: value < threshold * 0.75 ? "Cao" : "Cảnh báo",
+        }));
+
+    return {
+        success: true,
+        data_mode: "synthetic_demo",
+        predicted_score: predictedScore,
+        risk_level: riskLevel,
+        pass_probability: Math.round(100 / (1 + Math.exp(-(predictedScore - 5) * 1.2))),
+        model_version: "demo-heuristic-v1",
+        factors_to_improve: factorsToImprove,
+        action_advice: riskLevel === "Cao"
+            ? "Đây là kết quả DEMO. Hãy xem lại các chỉ số thấp trong danh sách gợi ý."
+            : "Đây là kết quả DEMO để minh họa; không dùng làm đánh giá thực tế.",
+        prediction_saved: false,
     };
 }

@@ -4,6 +4,9 @@ import { hashPassword, verifyPassword } from "./password-crypto.js";
 import {
     createDemoAnalytics,
     createDemoDashboardOverview,
+    createDemoPrediction,
+    createDemoStudentDetails,
+    createDemoStudentList,
 } from "./demo-data.js";
 import {
     appendSessionCookie,
@@ -79,6 +82,132 @@ function validName(value) {
 
 function validStudentId(value) {
     return typeof value === "string" && /^[A-Za-z0-9._-]{3,30}$/.test(value);
+}
+
+function positiveInteger(value, fallback, maximum) {
+    const parsed = Number(value);
+    return Number.isSafeInteger(parsed) && parsed > 0
+        ? Math.min(parsed, maximum)
+        : fallback;
+}
+
+function finiteNumber(value) {
+    if (
+        (typeof value !== "number" && typeof value !== "string") ||
+        (typeof value === "string" && value.trim() === "")
+    ) return Number.NaN;
+    return Number(value);
+}
+
+function demoStudentInput(body) {
+    const studentId = typeof body.student_id === "string"
+        ? body.student_id.trim().toUpperCase()
+        : "";
+    const fullName = typeof body.full_name === "string" ? body.full_name.trim() : "";
+    const className = typeof body.class_name === "string" ? body.class_name.trim() : "";
+    const numbers = [
+        "attendance_rate",
+        "study_hours",
+        "assignment_score",
+        "quiz_score",
+        "completion_rate",
+        "previous_score",
+    ];
+    const values = Object.fromEntries(numbers.map((key) => [key, finiteNumber(body[key])]));
+    if (
+        !/^DEMO-[A-Z0-9_-]{1,25}$/.test(studentId) ||
+        !validName(fullName) ||
+        !/^Sinh viên DEMO \d{3,}$/i.test(fullName) ||
+        !validName(className) ||
+        !Number.isFinite(values.attendance_rate) ||
+        values.attendance_rate < 0 ||
+        values.attendance_rate > 1 ||
+        !Number.isFinite(values.study_hours) ||
+        values.study_hours < 0 ||
+        values.study_hours > 40 ||
+        !Number.isFinite(values.completion_rate) ||
+        values.completion_rate < 0 ||
+        values.completion_rate > 1 ||
+        ["assignment_score", "quiz_score", "previous_score"].some(
+            (key) => !Number.isFinite(values[key]) || values[key] < 0 || values[key] > 10,
+        )
+    ) return null;
+
+    return { student_id: studentId, full_name: fullName, class_name: className, ...values };
+}
+
+async function getDemoStudents(env) {
+    const result = await env.DB.prepare(`
+        SELECT student_id, full_name, class_name, attendance_rate, study_hours,
+               assignment_score, quiz_score, completion_rate, previous_score,
+               created_at
+        FROM demo_students
+        ORDER BY created_at DESC
+        LIMIT 500
+    `).all();
+    return result.results || [];
+}
+
+function filterDemoStudents(students, url) {
+    const search = (url.searchParams.get("search") || "").trim().toLocaleLowerCase("vi");
+    const cohort = url.searchParams.get("cohort") || "";
+    const faculty = url.searchParams.get("faculty") || "";
+    const riskLevel = url.searchParams.get("risk_level") || "";
+    const className = url.searchParams.get("class_name") || "";
+    const sortBy = url.searchParams.get("sort_by") || "newest";
+    if (search.length > 120 || !["newest", "id_asc", "name_asc"].includes(sortBy)) {
+        return null;
+    }
+
+    const filtered = students.filter((student) => (
+        (!search ||
+            student.student_id.toLocaleLowerCase("vi").includes(search) ||
+            student.full_name.toLocaleLowerCase("vi").includes(search) ||
+            student.class_name.toLocaleLowerCase("vi").includes(search)) &&
+        (!cohort || student.class_name.startsWith(cohort)) &&
+        (!faculty || student.class_name.includes(faculty)) &&
+        (!className ||
+            student.class_name === className ||
+            student.class_name.startsWith(`${className}-`) ||
+            student.class_name.split("-").includes(className)) &&
+        (!riskLevel || student.risk_level === riskLevel)
+    ));
+    filtered.sort((left, right) => {
+        if (sortBy === "id_asc") return left.student_id.localeCompare(right.student_id);
+        if (sortBy === "name_asc") return left.full_name.localeCompare(right.full_name, "vi");
+        return String(right.created_at || "").localeCompare(String(left.created_at || ""));
+    });
+    return filtered;
+}
+
+function predictionInput(body) {
+    const keys = [
+        "attendance_rate",
+        "study_hours",
+        "assignment_score",
+        "quiz_score",
+        "completion_rate",
+        "previous_score",
+    ];
+    const values = Object.fromEntries(keys.map((key) => [key, finiteNumber(body[key])]));
+    if (
+        (body.student_id !== undefined &&
+            (typeof body.student_id !== "string" ||
+                !/^DEMO-[A-Z0-9_-]{1,25}$/i.test(body.student_id))) ||
+        !Number.isFinite(values.attendance_rate) ||
+        values.attendance_rate < 0 ||
+        values.attendance_rate > 1 ||
+        !Number.isFinite(values.study_hours) ||
+        values.study_hours < 0 ||
+        values.study_hours > 40 ||
+        !Number.isFinite(values.completion_rate) ||
+        values.completion_rate < 0 ||
+        values.completion_rate > 1 ||
+        ["assignment_score", "quiz_score", "previous_score"].some(
+            (key) => !Number.isFinite(values[key]) || values[key] < 0 || values[key] > 10,
+        )
+    ) return null;
+    return values;
 }
 
 async function rateLimit(env, request, scope, limit) {
@@ -261,6 +390,12 @@ async function handleForgotPassword(request, env) {
         return json({
             success: false,
             error: "Vui lòng nhập email hoặc mã sinh viên hợp lệ.",
+        }, 400);
+    }
+    if (!/^Sinh viên DEMO \d{3,}$/i.test(body.full_name.trim())) {
+        return json({
+            success: false,
+            error: "Tên trong chế độ DEMO phải theo dạng “Sinh viên DEMO 061”.",
         }, 400);
     }
     const record = await getUserByIdentifier(env, identifier.trim());
@@ -635,14 +770,137 @@ async function handleRequest(context) {
     }
     if (method === "GET" && path === "/api/dashboard/overview") {
         await requireRole(request, env, ["student", "lecturer", "admin"]);
+        const demoStudents = await getDemoStudents(env);
         return json(createDemoDashboardOverview({
             className: url.searchParams.get("class_name") || undefined,
             courseId: url.searchParams.get("course_id") || undefined,
-        }), 200, { "Cache-Control": "no-store" });
+        }, demoStudents), 200, { "Cache-Control": "no-store" });
     }
     if (method === "GET" && path === "/api/analytics") {
         await requireRole(request, env, ["student", "lecturer", "admin"]);
-        return json(createDemoAnalytics(), 200, { "Cache-Control": "no-store" });
+        const demoStudents = await getDemoStudents(env);
+        return json(createDemoAnalytics(demoStudents), 200, { "Cache-Control": "no-store" });
+    }
+    if (path === "/api/students" && method === "GET") {
+        await requireRole(request, env, ["admin", "lecturer"]);
+        const demoStudents = await getDemoStudents(env);
+        const students = filterDemoStudents(createDemoStudentList(demoStudents), url);
+        if (!students) {
+            return json({
+                success: false,
+                error: "Bộ lọc sinh viên không hợp lệ.",
+            }, 400);
+        }
+        const page = positiveInteger(url.searchParams.get("page"), 1, 10000);
+        const limit = positiveInteger(url.searchParams.get("limit"), 50, 100);
+        const total = students.length;
+        return json({
+            success: true,
+            data_mode: "synthetic_demo",
+            students: students.slice((page - 1) * limit, page * limit),
+            pagination: {
+                total_pages: Math.ceil(total / limit),
+                total,
+            },
+        }, 200, { "Cache-Control": "no-store" });
+    }
+    if (path === "/api/students" && method === "POST") {
+        await requireRole(request, env, ["admin", "lecturer"]);
+        const student = demoStudentInput(await readJson(request));
+        if (!student) {
+            return json({
+                success: false,
+                error: "Chỉ chấp nhận mã DEMO-*, tên “Sinh viên DEMO 061” và các chỉ số hợp lệ.",
+            }, 400);
+        }
+        const result = await env.DB.prepare(`
+            INSERT INTO demo_students (
+                student_id, full_name, class_name, attendance_rate, study_hours,
+                assignment_score, quiz_score, completion_rate, previous_score
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ON CONFLICT(student_id) DO NOTHING
+        `).bind(
+            student.student_id,
+            student.full_name,
+            student.class_name,
+            student.attendance_rate,
+            student.study_hours,
+            student.assignment_score,
+            student.quiz_score,
+            student.completion_rate,
+            student.previous_score,
+        ).run();
+        if (!result.meta?.changes) {
+            return json({
+                success: false,
+                error: "Mã sinh viên DEMO này đã tồn tại.",
+            }, 409);
+        }
+        return json({ success: true, data_mode: "synthetic_demo" }, 201);
+    }
+    const studentRoute = path.match(/^\/api\/students\/([^/]+)$/);
+    if (studentRoute && method === "GET") {
+        await requireRole(request, env, ["admin", "lecturer"]);
+        const studentId = decodeURIComponent(studentRoute[1]);
+        const demoStudents = await getDemoStudents(env);
+        const details = createDemoStudentDetails(studentId, demoStudents);
+        return details
+            ? json(details, 200, { "Cache-Control": "no-store" })
+            : json({ success: false, error: "Không tìm thấy sinh viên DEMO." }, 404);
+    }
+    if (studentRoute && method === "PUT") {
+        await requireRole(request, env, ["admin", "lecturer"]);
+        const studentId = decodeURIComponent(studentRoute[1]);
+        const body = await readJson(request);
+        if (!validName(body.full_name) || !validName(body.class_name)) {
+            return json({
+                success: false,
+                error: "Tên và lớp sinh viên không hợp lệ.",
+            }, 400);
+        }
+        const result = await env.DB.prepare(`
+            UPDATE demo_students
+            SET full_name = ?, class_name = ?, updated_at = CURRENT_TIMESTAMP
+            WHERE student_id = ?
+        `).bind(body.full_name.trim(), body.class_name.trim(), studentId).run();
+        if (!result.meta?.changes) {
+            const isSeed = createDemoStudentDetails(studentId);
+            return isSeed
+                ? json({
+                    success: false,
+                    error: "Không thể sửa bản ghi DEMO mẫu được tạo sẵn.",
+                }, 403)
+                : json({ success: false, error: "Không tìm thấy sinh viên DEMO." }, 404);
+        }
+        return json({ success: true, data_mode: "synthetic_demo" });
+    }
+    if (studentRoute && method === "DELETE") {
+        await requireRole(request, env, ["admin", "lecturer"]);
+        const studentId = decodeURIComponent(studentRoute[1]);
+        const result = await env.DB.prepare(
+            "DELETE FROM demo_students WHERE student_id = ?",
+        ).bind(studentId).run();
+        if (!result.meta?.changes) {
+            const isSeed = createDemoStudentDetails(studentId);
+            return isSeed
+                ? json({
+                    success: false,
+                    error: "Không thể xóa bản ghi DEMO mẫu được tạo sẵn.",
+                }, 403)
+                : json({ success: false, error: "Không tìm thấy sinh viên DEMO." }, 404);
+        }
+        return json({ success: true, data_mode: "synthetic_demo" });
+    }
+    if (method === "POST" && path === "/api/predict") {
+        await requireRole(request, env, ["student", "lecturer", "admin"]);
+        const input = predictionInput(await readJson(request));
+        if (!input) {
+            return json({
+                success: false,
+                error: "Chỉ nhận mã tham chiếu DEMO-* và các chỉ số dự đoán hợp lệ.",
+            }, 400);
+        }
+        return json(createDemoPrediction(input), 200, { "Cache-Control": "no-store" });
     }
     if (method === "GET" && path === "/api/data/import-history") {
         await requireRole(request, env, ["admin", "lecturer"]);
@@ -668,9 +926,7 @@ async function handleRequest(context) {
         }, 200, { "Cache-Control": "no-store" });
     }
     if (
-        path === "/api/predict" ||
         path === "/api/ml/model-info" ||
-        path.startsWith("/api/students") ||
         path.startsWith("/api/learning-path")
     ) {
         await requireRole(request, env, ["student", "lecturer", "admin"]);

@@ -14,6 +14,7 @@ export interface Student {
   student_id: string;
   full_name: string;
   class_name: string;
+  is_seed_data?: boolean;
   average_score?: number;
   attendance_rate?: number;
   study_hours?: number;
@@ -49,6 +50,7 @@ export interface TopicResult {
 
 export interface StudentDetails {
   success: boolean;
+  data_mode?: 'synthetic_demo';
   student: Student;
   learning_records: LearningRecord[];
   topic_results: TopicResult[];
@@ -57,6 +59,7 @@ export interface StudentDetails {
 
 export interface StudentListResponse {
   success: boolean;
+  data_mode?: 'synthetic_demo';
   students: Student[];
   pagination: {
     total_pages: number;
@@ -147,6 +150,7 @@ export interface ImportResult {
 
 export interface PredictResult {
   success: boolean;
+  data_mode?: 'synthetic_demo';
   error?: string;
   predicted_score: number;
   risk_level: 'Thấp' | 'Trung bình' | 'Cao';

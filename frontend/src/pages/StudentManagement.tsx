@@ -40,6 +40,7 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
 }) => {
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isDemoData, setIsDemoData] = useState(false);
   
   // Search state with debounce
   const [search, setSearch] = useState(initialSearch);
@@ -117,6 +118,7 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
         limit: 12
       });
       if (res.success) {
+        setIsDemoData(res.data_mode === 'synthetic_demo');
         setStudents(res.students);
         setTotalPages(res.pagination.total_pages);
         setTotalStudents(res.pagination.total);
@@ -247,6 +249,16 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
 
   return (
     <div className="space-y-6">
+      {isDemoData && (
+        <div
+          role="note"
+          className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"
+        >
+          <strong className="font-bold">DEMO — Danh sách giả lập.</strong>
+          {' '}Chỉ dùng mã DEMO-* và tên “Sinh viên DEMO ...”; không nhập hồ sơ cá nhân thật.
+        </div>
+      )}
+
       {/* Student Role Welcome Banner if logged in as Student */}
       {currentUser?.role === 'student' && (
         <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-2xl p-5 text-white shadow-md flex flex-wrap items-center justify-between gap-4">
@@ -266,13 +278,15 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
               </p>
             </div>
           </div>
-          <button
-            onClick={() => onNavigateToPath(currentUser.studentId || 'SV2026')}
-            className="flex items-center space-x-2 px-4 py-2 bg-white text-purple-700 hover:bg-purple-50 rounded-xl text-xs font-bold transition-all shadow-sm"
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>Xem lộ trình cá nhân của tôi</span>
-          </button>
+          {!isDemoData && (
+            <button
+              onClick={() => onNavigateToPath(currentUser.studentId || 'SV2026')}
+              className="flex items-center space-x-2 px-4 py-2 bg-white text-purple-700 hover:bg-purple-50 rounded-xl text-xs font-bold transition-all shadow-sm"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Xem lộ trình cá nhân của tôi</span>
+            </button>
+          )}
         </div>
       )}
 
@@ -407,7 +421,8 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
             </span>
             <span>
-              Đã ghi nhận sinh viên <strong>{newlyAddedId}</strong> vào Cloudflare D1. Mô hình Machine Learning đã tính toán dự đoán và phân loại rủi ro ban đầu.
+              Đã thêm sinh viên <strong>{newlyAddedId}</strong> vào danh sách DEMO riêng trên Cloudflare D1.
+              {' '}Các chỉ số chỉ để minh họa, không phải dự đoán Machine Learning.
             </span>
           </div>
           <button 
@@ -479,7 +494,7 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
                 <tr>
                   <td colSpan={8} className="px-5 py-12 text-center text-slate-400">
                     <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-500" />
-                    <span>Đang tìm kiếm & tải dữ liệu từ Cloudflare D1...</span>
+                    <span>Đang tải danh sách sinh viên...</span>
                   </td>
                 </tr>
               ) : students.length === 0 ? (
@@ -574,27 +589,37 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() => openEditModal(s)}
-                          title="Sửa thông tin"
-                          className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => onNavigateToPath(s.student_id)}
-                          title="Lộ trình học tập"
-                          className="p-1.5 text-slate-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
-                        >
-                          <UserCheck className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(s.student_id)}
-                          title="Xóa sinh viên"
-                          className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {!s.is_seed_data && (
+                          <>
+                            <button
+                              onClick={() => openEditModal(s)}
+                              title="Sửa bản ghi DEMO"
+                              className="p-1.5 text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(s.student_id)}
+                              title="Xóa bản ghi DEMO"
+                              className="p-1.5 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                        {isDemoData ? (
+                          <span title="Lộ trình chưa bật trong DEMO" className="inline-flex p-1.5 text-slate-300">
+                            <UserCheck className="w-4 h-4" />
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() => onNavigateToPath(s.student_id)}
+                            title="Lộ trình học tập"
+                            className="p-1.5 text-slate-500 hover:text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                          >
+                            <UserCheck className="w-4 h-4" />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   );
@@ -693,16 +718,20 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
 
             {/* Action footer */}
             <div className="pt-3 border-t border-slate-100 flex justify-end space-x-3">
-              <button
-                onClick={() => {
-                  const sid = detailModalStudent.student.student_id;
-                  setDetailModalStudent(null);
-                  onNavigateToPath(sid);
-                }}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700"
-              >
-                Xem lộ trình cá nhân hóa
-              </button>
+              {detailModalStudent.data_mode === 'synthetic_demo'
+                ? <span className="text-xs text-slate-500">Lộ trình chưa bật trong DEMO.</span>
+                : (
+                  <button
+                    onClick={() => {
+                      const sid = detailModalStudent.student.student_id;
+                      setDetailModalStudent(null);
+                      onNavigateToPath(sid);
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700"
+                  >
+                    Xem lộ trình cá nhân hóa
+                  </button>
+                )}
             </div>
           </div>
         </div>
@@ -731,12 +760,14 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
             <div className="space-y-3.5">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Mã sinh viên *</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    {isDemoData ? 'Mã sinh viên DEMO-* *' : 'Mã sinh viên *'}
+                  </label>
                   <input
                     type="text"
                     required
                     disabled={!!editingStudent}
-                    placeholder="VD: SV2026_099"
+                    placeholder={isDemoData ? 'VD: DEMO-0061' : 'VD: SV2026_099'}
                     value={formData.student_id}
                     onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:bg-slate-100"
@@ -744,11 +775,13 @@ export const StudentManagement: React.FC<StudentManagementProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Họ và tên *</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    {isDemoData ? 'Tên sinh viên DEMO *' : 'Họ và tên *'}
+                  </label>
                   <input
                     type="text"
                     required
-                    placeholder="VD: Nguyễn Văn An"
+                    placeholder={isDemoData ? 'Sinh viên DEMO 061' : 'VD: Nguyễn Văn An'}
                     value={formData.full_name}
                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"

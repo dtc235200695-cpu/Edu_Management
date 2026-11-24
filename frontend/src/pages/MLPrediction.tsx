@@ -64,16 +64,16 @@ export const MLPrediction: React.FC = () => {
           <div>
             <div className="flex items-center space-x-2 text-blue-100 text-xs font-semibold uppercase tracking-wider mb-2">
               <Cpu className="w-4 h-4 text-blue-200" />
-              <span>Cloudflare Edge ML Engine • Random Forest Ensemble</span>
+              <span>Chế độ DEMO • Ước tính minh họa</span>
             </div>
-            <h2 className="text-2xl font-bold">Dự đoán kết quả học tập & Đánh giá rủi ro</h2>
+            <h2 className="text-2xl font-bold">Mô phỏng kết quả học tập</h2>
             <p className="text-sm text-blue-50 mt-1 max-w-2xl leading-relaxed">
-              Hệ thống sử dụng mô hình học máy Random Forest Regressor & Classifier được huấn luyện bằng Python scikit-learn
-              và chạy suy luận trực tiếp trên Cloudflare Workers Edge với độ trễ &lt; 5ms.
+              Kết quả được tính bằng công thức minh họa trên dữ liệu giả lập; không phải mô hình Machine Learning đã triển khai,
+              không phản ánh sinh viên thật và không dùng cho quyết định học tập.
             </p>
           </div>
           <span className="hidden sm:inline-flex px-3 py-1 bg-blue-500/30 text-white border border-blue-300/50 rounded-full text-xs font-medium">
-            Phiên bản: v1.2.0-rf
+            demo-heuristic-v1
           </span>
         </div>
       </div>
@@ -110,11 +110,11 @@ export const MLPrediction: React.FC = () => {
             {/* Mã sinh viên (tùy chọn) */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">
-                Mã sinh viên (tùy chọn để lưu dự đoán vào D1)
+                Mã tham chiếu DEMO (tùy chọn; dự đoán không được lưu)
               </label>
               <input
                 type="text"
-                placeholder="VD: SV2026_015"
+                placeholder="VD: DEMO-0001"
                 value={formData.student_id}
                 onChange={(e) => setFormData({ ...formData, student_id: e.target.value })}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
@@ -287,16 +287,16 @@ export const MLPrediction: React.FC = () => {
           {result && (
             <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs space-y-5 animate-in fade-in duration-200">
               <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Kết quả suy luận ML</span>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Kết quả mô phỏng DEMO</span>
                 <span className="text-[11px] font-semibold px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full">
-                  Edge Inferred &lt; 2ms
+                  Không phải ML thực tế
                 </span>
               </div>
 
               {/* Main Score Display */}
               <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
                 <div>
-                  <span className="text-xs text-slate-500 font-medium">Điểm cuối kỳ dự đoán</span>
+                  <span className="text-xs text-slate-500 font-medium">Điểm ước tính DEMO</span>
                   <div className="text-4xl font-extrabold text-slate-900 mt-1">
                     {result.predicted_score}
                     <span className="text-lg font-normal text-slate-400">/10</span>
@@ -317,7 +317,7 @@ export const MLPrediction: React.FC = () => {
                     </span>
                   </div>
                   <span className="text-[11px] text-slate-500 block mt-1">
-                    Xác suất đạt môn: <strong className="text-slate-800">{result.pass_probability}%</strong>
+                    Chỉ số đạt môn tham khảo: <strong className="text-slate-800">{result.pass_probability}%</strong>
                   </span>
                 </div>
               </div>
