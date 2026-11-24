@@ -119,6 +119,27 @@ test("unlabeled CSV receives clearly disclosed demo risk labels from its feature
     assert.match(metrics.metrics_notice, /không có ground truth/i);
 });
 
+test("demo labels treat percentage-formatted rates and scores consistently", () => {
+    const [header, ...rows] = makeFeaturesOnlyCsv().split("\n");
+    const headers = header.split(",");
+    const percentCsv = [
+        header,
+        ...rows.map((row) => row.split(",").map((value, index) => {
+            if (["attendance_rate", "completion_rate"].includes(headers[index])) {
+                return String(Number(value) * 100);
+            }
+            if (["assignment_score", "quiz_score", "previous_score"].includes(headers[index])) {
+                return String(Number(value) * 10);
+            }
+            return value;
+        }).join(",")),
+    ].join("\n");
+    const labels = (csv) => createDemoLabeledCsv(csv).trim().split("\n").slice(1)
+        .map((row) => row.split(",").at(-1));
+
+    assert.deepEqual(labels(percentCsv), labels(makeFeaturesOnlyCsv()));
+});
+
 test("demo label generation creates a separate CSV column without changing source fields", () => {
     const source = makeFeaturesOnlyCsv();
     const labeled = createDemoLabeledCsv(source);

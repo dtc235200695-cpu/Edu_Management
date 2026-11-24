@@ -146,33 +146,44 @@ function validateRows(text) {
         if (hasRegression && (!Number.isFinite(score) || score < 0 || score > 10)) {
             throw invalidCsv(`Điểm final_score không hợp lệ ở dòng ${rowIndex + 2}.`);
         }
-        if (
-            record.attendance_rate < 0 || record.attendance_rate > 1 ||
-            record.completion_rate < 0 || record.completion_rate > 1 ||
-            record.study_hours < 0 || record.study_hours > 40 ||
-            ["assignment_score", "quiz_score", "previous_score"].some(
-                (feature) => record[feature] < 0 || record[feature] > 10,
-            )
-        ) {
-            throw invalidCsv(`Chỉ số ngoài phạm vi cho phép ở dòng ${rowIndex + 2}.`);
+        if (FEATURES.some((feature) => record[feature] < 0)) {
+            throw invalidCsv(`Chỉ số ${FEATURES.find((feature) => record[feature] < 0)} âm ở dòng ${rowIndex + 2}.`);
         }
         const rawRisk = hasRiskLevel ? values[indexes[riskColumn]].trim() : "";
         const providedRisk = normalizeRiskLevel(rawRisk);
         if (rawRisk && !providedRisk) {
             throw invalidCsv(`risk_level không hợp lệ ở dòng ${rowIndex + 2}.`);
         }
-        if (!providedRisk && score === null) generatedRiskLabels = true;
         record.final_score = score;
-        if (providedRisk) {
-            record.risk_level = providedRisk;
-        } else if (score !== null) {
-            generatedRiskLabels = true;
-            record.risk_level = score < 5 ? "Cao" : score < 7 ? "Trung bình" : "Thấp";
-        } else {
-            record.risk_level = deriveDemoRiskLevel(record);
-        }
+        record.risk_level = providedRisk;
         return record;
     });
+
+    for (const feature of ["attendance_rate", "completion_rate"]) {
+        const maximum = Math.max(...data.map((record) => record[feature]));
+        if (maximum > 100) {
+            throw invalidCsv(`${feature} phải nằm trong khoảng 0–1 hoặc 0–100.`);
+        }
+        if (maximum > 1) {
+            data.forEach((record) => { record[feature] /= 100; });
+        }
+    }
+    for (const feature of ["assignment_score", "quiz_score", "previous_score"]) {
+        const maximum = Math.max(...data.map((record) => record[feature]));
+        if (maximum > 100) {
+            throw invalidCsv(`${feature} phải nằm trong khoảng 0–10 hoặc 0–100.`);
+        }
+        if (maximum > 10) {
+            data.forEach((record) => { record[feature] /= 10; });
+        }
+    }
+    for (const record of data) {
+        if (record.risk_level) continue;
+        generatedRiskLabels = true;
+        record.risk_level = record.final_score === null
+            ? deriveDemoRiskLevel(record)
+            : record.final_score < 5 ? "Cao" : record.final_score < 7 ? "Trung bình" : "Thấp";
+    }
 
     if (data.length < 5) {
         throw invalidCsv("Cần ít nhất 5 dòng dữ liệu để đánh giá mô hình.");
