@@ -25,8 +25,9 @@ A Vietnamese learning dashboard prototype based on `tong_quan_trang_thai_de_tai_
 
 Demo credentials and role switching have been removed. The first admin signs in
 with the verified Google account `hoanghai69205@gmail.com`. New Google accounts
-are saved as pending until an administrator assigns a role and, for students,
-a unique student ID.
+are activated immediately with the student role. The primary admin account is
+configured separately through `ADMIN_EMAIL`; administrators can later assign
+other roles and unique student IDs.
 Student IDs must be 3–30 characters using letters, numbers, `.`, `_`, or `-`;
 passwords must be at least 8 characters.
 For a single-process preview of a production build, run `npm run build` and
@@ -53,9 +54,37 @@ in the Google OAuth client's authorized redirect URIs. The production API
 prints its configured callback URI when it starts.
 
 The authentication schema is in `cloudflare/migrations/0002_add_auth_and_roles.sql`.
-Existing non-admin accounts become pending after migration and must be approved
-by the primary admin. The Worker uses `ADMIN_EMAIL` if set; otherwise it uses
-`hoanghai69205@gmail.com`.
+Existing pending Google accounts are activated as students the next time they
+sign in with Google. Suspended accounts stay suspended. The Worker uses
+`ADMIN_EMAIL` if set; otherwise it uses `hoanghai69205@gmail.com`.
+
+## Cloudflare Pages production
+
+The Pages frontend and its Functions use `frontend/wrangler.jsonc` and
+`frontend/functions/`. Build the frontend and test the Pages runtime locally
+with `npm run build` and `npm run pages:dev`. The Pages Functions require the
+configured D1 database and R2 bucket; apply pending migrations before deploying:
+
+```powershell
+npx wrangler d1 migrations apply learnwise-db --remote
+npx wrangler pages project create eduinsight --production-branch main
+npx wrangler pages secret put GOOGLE_CLIENT_ID --project-name eduinsight
+npx wrangler pages secret put GOOGLE_CLIENT_SECRET --project-name eduinsight
+npx wrangler pages secret put SESSION_SECRET --project-name eduinsight
+npx wrangler pages secret put RESEND_API_KEY --project-name eduinsight
+npm run build
+npm run pages:deploy
+```
+
+Set `MAIL_FROM` in the Pages production variables after its sender domain is
+verified with Resend. Update the Google OAuth client's authorized redirect URI
+to `https://eduinsight.pages.dev/auth/google/callback` before enabling sign-in.
+Do not put any of the secret values in source control or chat.
+
+The dashboard, analytics, prediction, and learning-path API routes intentionally
+remain unavailable until an authorized learning dataset has been supplied and
+validated. Do not deploy this as a complete production release or present demo
+metrics as real learner data before that work is complete.
 
 ## Generate the ML demo artifacts
 
@@ -88,6 +117,7 @@ model performance.
 | `COOKIE_SECURE` | Set to `true` when serving over HTTPS |
 | `ADMIN_EMAIL` | Primary administrator Google account; defaults to `hoanghai69205@gmail.com` |
 | `MAIL_HOST`, `MAIL_PORT`, `MAIL_USER`, `MAIL_PASSWORD`, `MAIL_FROM` | SMTP connection for temporary-password and reset-code emails |
+| `RESEND_API_KEY` | Resend API key used by Cloudflare Pages Functions |
 
 Never commit `.env` or expose `GOOGLE_CLIENT_SECRET` or `SESSION_SECRET` in
 frontend variables. Vite reads the same root `.env` file but only exposes

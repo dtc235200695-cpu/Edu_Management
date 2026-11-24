@@ -17,9 +17,10 @@ interface LoginPageProps {
 type LoginMode = 'login' | 'forgot' | 'reset';
 
 const authErrorMessages: Record<string, string> = {
-  pending: 'Tài khoản Google đã được tạo và đang chờ quản trị viên duyệt.',
+  pending: 'Tài khoản chưa được kích hoạt. Vui lòng liên hệ quản trị viên.',
   email_unavailable: 'Không thể gửi mật khẩu qua email. Vui lòng liên hệ quản trị viên.',
   invalid_state: 'Phiên đăng nhập Google không hợp lệ. Hãy thử lại.',
+  account_disabled: 'Tài khoản đang bị tạm khóa. Vui lòng liên hệ quản trị viên.',
   cancelled: 'Bạn đã hủy đăng nhập Google.',
   oauth_failed: 'Đăng nhập Google thất bại. Hãy thử lại sau.',
 };
@@ -273,7 +274,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess, initialErr
           {mode === 'login' && (
             <div className="pt-4 border-t border-slate-100 text-xs text-slate-500 flex items-start gap-2">
               <KeyRound className="w-4 h-4 shrink-0 text-slate-400" />
-              <span>Tài khoản mới đăng nhập Google sẽ chờ admin duyệt. Mật khẩu tạm thời được gửi tới email đã xác minh.</span>
+              <span>Tài khoản Google mới được kích hoạt tự động với quyền sinh viên. Tài khoản quản trị được cấu hình riêng.</span>
             </div>
           )}
         </div>

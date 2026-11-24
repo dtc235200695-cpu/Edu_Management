@@ -1,18 +1,51 @@
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { changePassword, fetchCurrentUser, getErrorMessage, logoutApi } from './api';
 import { PageId, UserPersona } from './types';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { LoginPage } from './pages/LoginPage';
 import { ChangePasswordPage } from './pages/ChangePasswordPage';
-import { DashboardOverview } from './pages/DashboardOverview';
-import { StudentManagement } from './pages/StudentManagement';
-import { DataAnalytics } from './pages/DataAnalytics';
-import { MLPrediction } from './pages/MLPrediction';
-import { LearningPath } from './pages/LearningPath';
-import { DataManagement } from './pages/DataManagement';
-import { MLModelManagement } from './pages/MLModelManagement';
-import { SystemSettings } from './pages/SystemSettings';
+
+const DashboardOverview = React.lazy(() =>
+  import('./pages/DashboardOverview').then(({ DashboardOverview }) => ({
+    default: DashboardOverview,
+  })),
+);
+const StudentManagement = React.lazy(() =>
+  import('./pages/StudentManagement').then(({ StudentManagement }) => ({
+    default: StudentManagement,
+  })),
+);
+const DataAnalytics = React.lazy(() =>
+  import('./pages/DataAnalytics').then(({ DataAnalytics }) => ({
+    default: DataAnalytics,
+  })),
+);
+const MLPrediction = React.lazy(() =>
+  import('./pages/MLPrediction').then(({ MLPrediction }) => ({
+    default: MLPrediction,
+  })),
+);
+const LearningPath = React.lazy(() =>
+  import('./pages/LearningPath').then(({ LearningPath }) => ({
+    default: LearningPath,
+  })),
+);
+const DataManagement = React.lazy(() =>
+  import('./pages/DataManagement').then(({ DataManagement }) => ({
+    default: DataManagement,
+  })),
+);
+const MLModelManagement = React.lazy(() =>
+  import('./pages/MLModelManagement').then(({ MLModelManagement }) => ({
+    default: MLModelManagement,
+  })),
+);
+const SystemSettings = React.lazy(() =>
+  import('./pages/SystemSettings').then(({ SystemSettings }) => ({
+    default: SystemSettings,
+  })),
+);
 
 const pageTitleMap: Record<PageId, string> = {
   dashboard: 'Dashboard tổng quan',
@@ -167,34 +200,42 @@ export const App: React.FC = () => {
         )}
         {authWarning === 'email_unavailable' && (
           <div role="alert" className="mx-8 mt-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
-            Không gửi được mật khẩu tạm thời qua email. Đăng nhập Google vẫn hoạt động; hãy cấu hình SMTP để bật đăng nhập mật khẩu và khôi phục mật khẩu.
+            Không gửi được mật khẩu tạm thời qua email. Đăng nhập Google vẫn hoạt động; nếu cần dùng mật khẩu, hãy thử chức năng đặt lại mật khẩu hoặc liên hệ quản trị viên.
           </div>
         )}
         <main className="flex-1 p-8 overflow-y-auto max-w-7xl w-full mx-auto">
-          {currentPage === 'dashboard' && (
-            <DashboardOverview
-              onNavigateToStudent={handleNavigateToStudent}
-              onNavigateToPath={handleNavigateToPath}
-            />
-          )}
-          {currentPage === 'students' && (
-            <StudentManagement
-              onNavigateToPath={handleNavigateToPath}
-              currentUser={currentUser}
-              initialSearch={headerSearch}
-            />
-          )}
-          {currentPage === 'analytics' && <DataAnalytics />}
-          {currentPage === 'prediction' && <MLPrediction />}
-          {currentPage === 'learning-path' && (
-            <LearningPath
-              initialStudentId={selectedStudentForPath || currentUser.studentId || ''}
-              isStudent={currentUser.role === 'student'}
-            />
-          )}
-          {currentPage === 'data-management' && <DataManagement />}
-          {currentPage === 'ml-model' && <MLModelManagement />}
-          {currentPage === 'settings' && currentUser.role === 'admin' && <SystemSettings />}
+          <Suspense
+            fallback={
+              <div className="flex min-h-[60vh] items-center justify-center text-sm text-slate-500">
+                Đang tải trang...
+              </div>
+            }
+          >
+            {currentPage === 'dashboard' && (
+              <DashboardOverview
+                onNavigateToStudent={handleNavigateToStudent}
+                onNavigateToPath={handleNavigateToPath}
+              />
+            )}
+            {currentPage === 'students' && (
+              <StudentManagement
+                onNavigateToPath={handleNavigateToPath}
+                currentUser={currentUser}
+                initialSearch={headerSearch}
+              />
+            )}
+            {currentPage === 'analytics' && <DataAnalytics />}
+            {currentPage === 'prediction' && <MLPrediction />}
+            {currentPage === 'learning-path' && (
+              <LearningPath
+                initialStudentId={selectedStudentForPath || currentUser.studentId || ''}
+                isStudent={currentUser.role === 'student'}
+              />
+            )}
+            {currentPage === 'data-management' && <DataManagement />}
+            {currentPage === 'ml-model' && <MLModelManagement />}
+            {currentPage === 'settings' && currentUser.role === 'admin' && <SystemSettings />}
+          </Suspense>
         </main>
       </div>
     </div>

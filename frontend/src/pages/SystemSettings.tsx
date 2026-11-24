@@ -75,7 +75,7 @@ export const SystemSettings: React.FC = () => {
               <li><strong>Sinh viên:</strong> dashboard và chức năng cá nhân được giới hạn theo tài khoản.</li>
               <li><strong>Giảng viên:</strong> xem/quản lý dữ liệu học tập, phân tích, dự đoán và nhập CSV.</li>
               <li><strong>Quản trị viên:</strong> toàn quyền và quản lý tài khoản, role, trạng thái.</li>
-              <li>Tài khoản Google mới ở trạng thái chờ duyệt; mã sinh viên là duy nhất và chỉ quản trị viên được gán role.</li>
+              <li>Tài khoản Google mới được kích hoạt tự động với quyền sinh viên; chỉ quản trị viên được gán role khác và mã sinh viên.</li>
             </ul>
           </div>
           <AccountManagement />

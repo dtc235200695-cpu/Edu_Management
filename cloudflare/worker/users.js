@@ -65,15 +65,26 @@ export async function handleUserRequest(request, env) {
 
         if (request.method === "POST" && url.pathname === "/internal/users/google") {
             const body = await readJson(request);
-            const { email, name, picture = "", google_sub, password_hash } = body || {};
+            const {
+                email,
+                name,
+                picture = "",
+                google_sub,
+                password_hash = null,
+            } = body || {};
             if (
                 !validEmail(email) ||
                 !validName(name) ||
                 typeof picture !== "string" ||
                 typeof google_sub !== "string" ||
                 !google_sub ||
-                typeof password_hash !== "string" ||
-                !password_hash.startsWith("scrypt$")
+                (
+                    password_hash !== null &&
+                    (
+                        typeof password_hash !== "string" ||
+                        !password_hash.startsWith("scrypt$")
+                    )
+                )
             ) {
                 return invalidRequest("Invalid Google account data.");
             }
@@ -94,17 +105,18 @@ export async function handleUserRequest(request, env) {
                     INSERT INTO users (
                         id, email, name, picture, role, status, google_sub,
                         password_hash, must_change_password
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                     ON CONFLICT(email) DO NOTHING
                 `).bind(
                     id,
                     normalizedEmail,
                     name.trim(),
                     picture,
-                    isAdmin ? "admin" : "pending",
-                    isAdmin ? "active" : "pending",
+                    isAdmin ? "admin" : "student",
+                    "active",
                     google_sub,
-                    password_hash
+                    password_hash,
+                    password_hash ? 1 : 0
                 ).run();
                 created = result.meta.changes === 1;
                 user = await env.DB.prepare(`
@@ -127,19 +139,29 @@ export async function handleUserRequest(request, env) {
             }
 
             const isAdmin = normalizedEmail === adminEmail(env);
+            const role = isAdmin
+                ? "admin"
+                : user.role === "pending"
+                    ? "student"
+                    : user.role;
+            const status = isAdmin
+                ? "active"
+                : user.status === "pending" &&
+                      (user.role === "pending" || user.role === "student")
+                    ? "active"
+                    : user.status;
             await env.DB.prepare(`
                 UPDATE users
                 SET google_sub = ?, name = ?, picture = ?,
-                    role = CASE WHEN ? THEN 'admin' ELSE role END,
-                    status = CASE WHEN ? THEN 'active' ELSE status END,
+                    role = ?, status = ?,
                     updated_at = CURRENT_TIMESTAMP
                 WHERE id = ? AND (google_sub IS NULL OR google_sub = ?)
             `).bind(
                 google_sub,
                 name.trim(),
                 picture,
-                isAdmin ? 1 : 0,
-                isAdmin ? 1 : 0,
+                role,
+                status,
                 user.id,
                 google_sub
             ).run();

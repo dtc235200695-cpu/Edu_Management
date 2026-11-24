@@ -86,9 +86,11 @@ router.get("/auth/google/callback", async (req, res, next) => {
     return res.redirect(redirectWithStatus("invalid_state"));
   }
 
+  let failureStage = "google_token_exchange";
   try {
     const { tokens } = await oauthClient.getToken(req.query.code);
     if (!tokens.id_token) throw new Error("Google did not return an ID token.");
+    failureStage = "google_id_token_verification";
     const ticket = await oauthClient.verifyIdToken({
       idToken: tokens.id_token,
       audience: process.env.GOOGLE_CLIENT_ID,
@@ -104,6 +106,7 @@ router.get("/auth/google/callback", async (req, res, next) => {
     }
 
     const temporaryPassword = createTemporaryPassword();
+    failureStage = "worker_user_upsert";
     const result = await requestWorker(
       "/internal/users/google",
       jsonWorkerRequest("POST", {
@@ -116,21 +119,30 @@ router.get("/auth/google/callback", async (req, res, next) => {
     );
     let record = result.user;
     if (!record) throw new Error("Google account could not be saved.");
-    let emailDeliveryFailed = false;
-    if (result.created || !record.password_email_sent_at) {
-      try {
-        await deliverTemporaryPassword(record, temporaryPassword);
-      } catch (error) {
-        if (record.email.toLowerCase() !== config.adminEmail) throw error;
-        emailDeliveryFailed = true;
-      } finally {
-        record = await findUserById(record.id);
-      }
-    }
+    failureStage = "account_status_check";
     if (record.status !== "active" || record.role === "pending") {
       return res.redirect(redirectWithStatus("pending"));
     }
 
+    let emailDeliveryFailed = false;
+    if (result.created || !record.password_email_sent_at) {
+      failureStage = "temporary_password_delivery";
+      try {
+        await deliverTemporaryPassword(record, temporaryPassword);
+      } catch (error) {
+        emailDeliveryFailed = true;
+        const diagnostics = [
+          error.name || "Error",
+          Number.isInteger(error.status) ? `HTTP ${error.status}` : "",
+          typeof error.code === "string" ? error.code : "",
+        ].filter(Boolean).join(", ");
+        console.error(`Google OAuth temporary password delivery failed (${diagnostics})`);
+      }
+      failureStage = "user_refresh_after_password_delivery";
+      record = await findUserById(record.id);
+    }
+
+    failureStage = "session_creation";
     await issueSession(res, record, false);
     res.set("Cache-Control", "no-store");
     return res.redirect(
@@ -139,7 +151,12 @@ router.get("/auth/google/callback", async (req, res, next) => {
         : config.appUrl,
     );
   } catch (error) {
-    console.error("Google OAuth callback failed:", error.name || "Error");
+    const diagnostics = [
+      error.name || "Error",
+      Number.isInteger(error.status) ? `HTTP ${error.status}` : "",
+      typeof error.code === "string" ? error.code : "",
+    ].filter(Boolean).join(", ");
+    console.error(`Google OAuth callback failed at ${failureStage} (${diagnostics})`);
     return res.redirect(
       redirectWithStatus(error.emailDelivery ? "email_unavailable" : "oauth_failed"),
     );

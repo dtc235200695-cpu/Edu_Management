@@ -157,7 +157,7 @@ export const AccountManagement: React.FC = () => {
         <div className="flex items-center justify-between gap-3">
           <div>
             <h3 className="text-base font-bold text-slate-900">Tài khoản và phân quyền</h3>
-            <p className="text-xs text-slate-500 mt-1">Tài khoản Google mới ở trạng thái chờ duyệt cho tới khi admin cấp role và mã sinh viên.</p>
+            <p className="text-xs text-slate-500 mt-1">Tài khoản Google mới được kích hoạt tự động với quyền sinh viên; quản trị viên có thể cập nhật role và mã sinh viên sau đó.</p>
           </div>
           <button
             type="button"

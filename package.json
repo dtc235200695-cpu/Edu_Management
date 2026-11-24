@@ -11,6 +11,14 @@
     "dev": "npm run dev --workspace frontend",
     "server": "npm run server --workspace backend",
     "build": "npm run build --workspace frontend",
-    "start": "npm run start --workspace backend"
+    "start": "npm run start --workspace backend",
+    "pages:dev": "wrangler pages dev dist --cwd frontend",
+    "pages:deploy": "wrangler pages deploy dist --project-name eduinsight --cwd frontend"
+  },
+  "dependencies": {
+    "scrypt-js": "^3.0.1"
+  },
+  "devDependencies": {
+    "wrangler": "^4.166.0"
   }
 }

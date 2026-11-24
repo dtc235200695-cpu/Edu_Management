@@ -1,0 +1,26 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "eduinsight",
+  "pages_build_output_dir": "./dist",
+  "compatibility_date": "2026-11-24",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "learnwise-db",
+      "database_id": "536e2b27-4c57-4b9e-9417-df5fc95d7840",
+      "migrations_dir": "../cloudflare/migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "STORAGE",
+      "bucket_name": "learnwise-storage"
+    }
+  ],
+  "vars": {
+    "APP_URL": "https://eduinsight.pages.dev",
+    "GOOGLE_REDIRECT_URI": "https://eduinsight.pages.dev/auth/google/callback",
+    "ADMIN_EMAIL": "hoanghai69205@gmail.com",
+    "NODE_ENV": "production"
+  }
+}
