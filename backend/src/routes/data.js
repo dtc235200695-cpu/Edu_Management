@@ -1,7 +1,4 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import express from "express";
-import { projectRoot } from "../config.js";
 import { requireRole, requireSession } from "../middleware/session.js";
 import { demoStudentIdForPathId } from "../../../cloudflare/worker/demo-data.js";
 import {
@@ -14,7 +11,6 @@ import {
 
 const router = express.Router();
 const staffOnly = [requireSession, requireRole(["admin", "lecturer"])];
-const modelMetricsPath = path.join(projectRoot, "ml", "model_metrics.json");
 
 const overview = {
   stats: [
@@ -71,39 +67,19 @@ router.get("/api/dashboard/overview", requireSession, (_req, res) => {
   });
 });
 
-router.get("/api/ml/model-info", ...staffOnly, async (_req, res) => {
-  let metrics;
+router.get("/api/ml/model-info", ...staffOnly, async (req, res, next) => {
+  const key = typeof req.query.key === "string" ? req.query.key : "";
+  if (!key) {
+    return res.status(400).json({ success: false, error: "Hãy chọn một file CSV trong R2." });
+  }
   try {
-    metrics = JSON.parse(await readFile(modelMetricsPath, "utf8"));
+    const metrics = await requestStorage(
+      `/internal/storage/model-info?key=${encodeURIComponent(key)}`,
+    );
+    return res.set("Cache-Control", "no-store").json(metrics);
   } catch (error) {
-    if (error.code === "ENOENT") {
-      return res.status(503).json({
-        success: false,
-        error: "Chưa tìm thấy ml/model_metrics.json. Hãy chạy python ml/train_model.py.",
-      });
-    }
-    console.error("Could not read model metrics:", error.name || "Error");
-    return res.status(500).json({
-      success: false,
-      error: "Không thể đọc model metrics artifact.",
-    });
+    return next(error);
   }
-
-  if (
-    !metrics ||
-    typeof metrics !== "object" ||
-    typeof metrics.model_name !== "string" ||
-    typeof metrics.model_version !== "string" ||
-    !metrics.regression_metrics ||
-    !metrics.classification_metrics ||
-    !metrics.feature_importances
-  ) {
-    return res.status(500).json({
-      success: false,
-      error: "Model metrics artifact không đúng định dạng.",
-    });
-  }
-  return res.set("Cache-Control", "no-store").json({ ...metrics, success: true });
 });
 
 router.get(

@@ -145,8 +145,9 @@ export async function fetchImportHistory() {
   return request<ApiResponse & { history: ImportHistoryItem[] }>('/data/import-history');
 }
 
-export async function fetchModelInfo() {
-  return request<ApiResponse & ModelInfo>('/ml/model-info');
+export async function fetchModelInfo(key: string) {
+  const query = new URLSearchParams({ key });
+  return request<ApiResponse & ModelInfo>(`/ml/model-info?${query.toString()}`);
 }
 
 export async function fetchCloudflareHealth() {

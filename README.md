@@ -40,9 +40,17 @@ then `npm start`; open `http://localhost:8787`.
 The Cloudflare status panel checks the deployed Worker, D1, and private R2
 bucket. CSV imports are proxied through the backend to R2; files are not
 currently indexed into D1. The bucket is private and uploads are limited to
-10 MB. For another environment, set the same random `LEARNWISE_API_SECRET`
-in the local `.env` and as a Wrangler Worker secret. Configure D1 migrations
-and deploy the Worker from the repository root:
+10 MB. The ML Model page lists those imports; selecting a CSV evaluates a
+Ridge regressor and Gaussian Naive Bayes risk classifier against a deterministic holdout from
+that file. Model evaluation requires at least five rows and the numeric columns
+`attendance_rate`, `study_hours`, `assignment_score`, `quiz_score`,
+`completion_rate`, `previous_score`, and `final_score`; `risk_level` is optional
+and derived from `final_score` when absent. At most 5,000 rows are evaluated.
+Only metrics are returned to the browser; the CSV remains private in R2.
+
+For another environment, set the same random `LEARNWISE_API_SECRET` in the
+local `.env` and as a Wrangler Worker secret. Configure D1 migrations and
+deploy the Worker from the repository root:
 
 ```bash
 npx wrangler d1 migrations apply learnwise-db --remote
@@ -100,9 +108,9 @@ four synthetic course records each, with 240 associated learning-path rows,
 stored in D1 by migration `0006_seed_demo_scores_and_learning_paths.sql`.
 Additional demo students can only be created with `DEMO-*` IDs and generated
 demo names; they are stored separately in the D1 `demo_students` table. The
-ML Model page reads the synthetic
-`ml/model_metrics.json` artifact and labels it as demo data. The prediction
-endpoint returns a labeled heuristic estimate, not the trained ML model.
+ML Model page computes per-file metrics from the selected R2 CSV; this is a
+request-time evaluation, not a persisted model artifact. The prediction
+endpoint still returns a labeled heuristic estimate, not the CSV model.
 Learning-path completion statuses are stored in the D1
 `demo_learning_path_status` table, created by migration
 `0005_create_demo_learning_path_status.sql`. Real student IDs still receive an
@@ -126,9 +134,9 @@ python ml/train_model.py
 If `ml/student_learning_data.csv` does not exist, the training script creates
 1,500 deterministic synthetic records. It saves regression/classification
 models under `ml/artifacts/` and evaluation metrics to
-`ml/model_metrics.json`, which the local ML Model page reads from the API.
-Metrics are explicitly marked as synthetic and are not evidence of real-world
-model performance.
+`ml/model_metrics.json`. These artifacts are for the isolated local demo
+pipeline; the ML Model page evaluates whichever CSV is selected in private R2.
+Synthetic metrics are not evidence of real-world model performance.
 
 ## Environment variables
 
@@ -164,8 +172,10 @@ The implementation provides a front-end prototype and a modular Node
 authentication/API server. Cloudflare Worker and D1 connectivity is verified
 by a live health check, CSV files can be stored in private R2, but learner
 records are not persisted to D1, and Queues and a Python Worker are not connected. The ML
-artifacts are trained on generated synthetic data only. The following items
-remain open as described in the project overview:
+Python artifacts are trained on generated synthetic data only; the selected-CSV
+evaluation runs in the Worker and does not persist trained model files. The
+prediction endpoint still uses a demo heuristic. The following items remain
+open as described in the project overview:
 
 - Replace synthetic records with an approved real dataset and re-evaluate the model.
 - Recommendation rules and a production-compatible model inference runtime.

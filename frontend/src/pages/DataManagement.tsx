@@ -60,7 +60,7 @@ export const DataManagement: React.FC = () => {
         }
 
         const headers = lines[0].split(',').map(h => h.trim());
-        const expectedHeaders = ['student_id', 'attendance_rate', 'study_hours', 'assignment_score', 'quiz_score', 'completion_rate', 'previous_score'];
+        const expectedHeaders = ['student_id', 'attendance_rate', 'study_hours', 'assignment_score', 'quiz_score', 'completion_rate', 'previous_score', 'final_score'];
         const missing = expectedHeaders.filter(h => !headers.includes(h));
 
         if (missing.length > 0) {

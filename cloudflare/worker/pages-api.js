@@ -2,7 +2,6 @@ import { handleStorageRequest } from "./storage.js";
 import { handleLearningPathRequest } from "./learning-paths.js";
 import { handleUserRequest } from "./users.js";
 import { hashPassword, verifyPassword } from "./password-crypto.js";
-import modelMetrics from "../../ml/model_metrics.json" with { type: "json" };
 import {
     createDemoAnalytics,
     createDemoDashboardOverview,
@@ -1067,13 +1066,19 @@ async function handleRequest(context) {
             body,
         );
     }
-    if (path === "/api/ml/model-info") {
+    if (method === "GET" && path === "/api/ml/model-info") {
         await requireRole(request, env, ["admin", "lecturer"]);
-        return json({
-            ...modelMetrics,
-            success: true,
-            data_mode: "synthetic_demo",
-        }, 200, { "Cache-Control": "no-store" });
+        const key = new URL(request.url).searchParams.get("key");
+        if (!key) {
+            return json({ success: false, error: "Hãy chọn một file CSV trong R2." }, 400);
+        }
+        const response = await invokeStorage(
+            `/internal/storage/model-info?key=${encodeURIComponent(key || "")}`,
+            request,
+            env,
+            "GET",
+        );
+        return json(await response.json(), response.status, { "Cache-Control": "no-store" });
     }
     if (path.startsWith("/api/learning-path") || /\/learning-path$/.test(path)) {
         await requireRole(request, env, ["student", "lecturer", "admin"]);

@@ -1,7 +1,7 @@
 // frontend/src/pages/MLModelManagement.tsx
 import React, { useState, useEffect } from 'react';
-import { fetchModelInfo, getErrorMessage } from '../api';
-import { ModelInfo } from '../types';
+import { fetchImportHistory, fetchModelInfo, getErrorMessage } from '../api';
+import { ImportHistoryItem, ModelInfo } from '../types';
 import { 
   Cpu, 
   Award, 
@@ -24,54 +24,183 @@ export const MLModelManagement: React.FC = () => {
   const [model, setModel] = useState<ModelInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [files, setFiles] = useState<ImportHistoryItem[]>([]);
+  const [selectedKey, setSelectedKey] = useState('');
+  const [filesLoading, setFilesLoading] = useState(true);
+  const [filesError, setFilesError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
-    loadModelInfo();
+    loadFiles();
   }, []);
 
-  const loadModelInfo = async () => {
-    setLoading(true);
-    setError(null);
+  const loadFiles = async () => {
+    setFilesLoading(true);
+    setFilesError(null);
     try {
-      const res = await fetchModelInfo();
-      if (res.success) {
-        setModel(res);
-      } else {
-        setError('Chưa có mô hình học máy được kết nối');
+      const response = await fetchImportHistory();
+      if (!response.success) {
+        throw new Error('Máy chủ không trả về danh sách CSV.');
       }
+      const history = [...response.history].sort((a, b) => {
+        const timeA = Date.parse(a.created_at) || 0;
+        const timeB = Date.parse(b.created_at) || 0;
+        return timeB - timeA;
+      });
+      setFiles(history);
+      setSelectedKey((current) => (
+        history.some((file) => (file.r2_key || file.import_id) === current)
+          ? current
+          : history.length > 0
+            ? history[0].r2_key || history[0].import_id
+            : ''
+      ));
     } catch (err) {
-      setError(getErrorMessage(err, 'Không thể kết nối đến máy chủ Model Registry'));
+      setFilesError(getErrorMessage(err, 'Không thể tải danh sách CSV trong R2'));
     } finally {
-      setLoading(false);
+      setFilesLoading(false);
     }
   };
 
+  useEffect(() => {
+    let active = true;
+    if (!selectedKey) {
+      setModel(null);
+      setError(null);
+      setLoading(false);
+      return () => { active = false; };
+    }
+
+    setLoading(true);
+    setError(null);
+    setModel(null);
+    try {
+      fetchModelInfo(selectedKey)
+        .then((res) => {
+          if (!active) return;
+          if (res.success) setModel(res);
+          else setError('Không thể tính metrics cho file CSV đã chọn.');
+        })
+        .catch((err) => {
+          if (active) setError(getErrorMessage(err, 'Không thể đánh giá file CSV đã chọn'));
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+    } catch (err) {
+      if (active) {
+        setError(getErrorMessage(err, 'Không thể đánh giá file CSV đã chọn'));
+        setLoading(false);
+      }
+    }
+    return () => { active = false; };
+  }, [selectedKey, reloadToken]);
+
+  const fileSelector = (
+    <section className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+      <div className="flex flex-wrap items-end gap-3">
+        <label className="flex-1 min-w-[240px] space-y-2">
+          <span className="text-xs font-bold uppercase text-slate-600">Bảng CSV nguồn</span>
+          <select
+            aria-label="Bảng CSV nguồn"
+            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 disabled:bg-slate-50"
+            value={selectedKey}
+            onChange={(event) => setSelectedKey(event.target.value)}
+            disabled={filesLoading || files.length === 0}
+          >
+            {files.length === 0 && <option value="">Chưa có file CSV trong R2</option>}
+            {files.map((file) => {
+              const key = file.r2_key || file.import_id;
+              return (
+                <option key={key} value={key}>
+                  {file.filename} — {new Date(file.created_at).toLocaleString('vi-VN')}
+                </option>
+              );
+            })}
+          </select>
+        </label>
+        <button
+          type="button"
+          onClick={loadFiles}
+          disabled={filesLoading}
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+        >
+          <RefreshCw className={`h-4 w-4 ${filesLoading ? 'animate-spin' : ''}`} />
+          Làm mới danh sách
+        </button>
+      </div>
+      {selectedKey && (
+        <p className="mt-2 text-xs text-slate-500">
+          Metrics và biểu đồ bên dưới được tính riêng từ file đang chọn.
+        </p>
+      )}
+    </section>
+  );
+
+  if (filesLoading) {
+    return (
+      <div className="space-y-6">
+        {fileSelector}
+        <div className="flex flex-col items-center justify-center min-h-[40vh] space-y-3">
+          <RefreshCw className="w-8 h-8 text-blue-600 animate-spin" />
+          <p className="text-sm font-medium text-slate-500">Đang tải danh sách CSV từ R2...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (filesError || files.length === 0) {
+    return (
+      <div className="space-y-6">
+        {fileSelector}
+        <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center max-w-lg mx-auto space-y-4">
+          <Database className="w-12 h-12 text-slate-400 mx-auto" />
+          <h3 className="text-lg font-bold text-slate-800">
+            {filesError ? 'Không tải được danh sách CSV' : 'Chưa có file CSV trong R2'}
+          </h3>
+          <p role="alert" className="text-xs text-slate-600">
+            {filesError || 'Hãy tải CSV lên trong mục Quản lý dữ liệu, sau đó làm mới danh sách.'}
+          </p>
+          <button
+            onClick={loadFiles}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700"
+          >
+            Kiểm tra lại
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-3">
-        <RefreshCw className="w-8 h-8 text-blue-600 animate-spin" />
-        <p className="text-sm font-medium text-slate-500">Đang đọc thông số mô hình và metrics thực nghiệm...</p>
+      <div className="space-y-6">
+        {fileSelector}
+        <div className="flex flex-col items-center justify-center min-h-[40vh] space-y-3">
+          <RefreshCw className="w-8 h-8 text-blue-600 animate-spin" />
+          <p className="text-sm font-medium text-slate-500">Đang tính metrics cho file CSV đã chọn...</p>
+        </div>
       </div>
     );
   }
 
   if (error || !model) {
     return (
-      <div className="bg-white p-8 rounded-2xl border border-red-200 text-center max-w-lg mx-auto mt-12 space-y-4">
-        <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
-        <h3 className="text-lg font-bold text-slate-800">Mô hình ML chưa khả dụng</h3>
-        <p role="alert" className="text-xs text-slate-600">
-          {error || 'Backend chưa có pipeline huấn luyện hoặc model metrics artifact.'}
-        </p>
-        <p className="text-xs text-slate-500">
-          Cần bổ sung pipeline huấn luyện và artifact hợp lệ trước khi hiển thị metrics.
-        </p>
-        <button
-          onClick={loadModelInfo}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700"
-        >
-          Kiểm tra lại
-        </button>
+      <div className="space-y-6">
+        {fileSelector}
+        <div className="bg-white p-8 rounded-2xl border border-red-200 text-center max-w-lg mx-auto space-y-4">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto" />
+          <h3 className="text-lg font-bold text-slate-800">Không thể đánh giá file CSV</h3>
+          <p role="alert" className="text-xs text-slate-600">
+            {error || 'Không nhận được kết quả đánh giá từ máy chủ.'}
+          </p>
+          <button
+            onClick={() => setReloadToken((token) => token + 1)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-semibold hover:bg-blue-700"
+          >
+            Thử lại
+          </button>
+        </div>
       </div>
     );
   }
@@ -92,24 +221,7 @@ export const MLModelManagement: React.FC = () => {
     };
   }).sort((a, b) => b.importance - a.importance);
 
-  // Scatter plot Actual vs Predicted
-  // Dữ liệu mô phỏng đối chứng phân bổ quanh đường chéo y = x
-  const scatterActualPredicted = [
-    { actual: 3.2, predicted: 3.4 },
-    { actual: 4.5, predicted: 4.3 },
-    { actual: 5.0, predicted: 5.1 },
-    { actual: 5.8, predicted: 5.6 },
-    { actual: 6.5, predicted: 6.7 },
-    { actual: 7.0, predicted: 6.9 },
-    { actual: 7.4, predicted: 7.5 },
-    { actual: 8.0, predicted: 8.1 },
-    { actual: 8.5, predicted: 8.3 },
-    { actual: 9.0, predicted: 8.9 },
-    { actual: 9.5, predicted: 9.4 },
-    { actual: 3.8, predicted: 3.9 },
-    { actual: 6.2, predicted: 6.0 },
-    { actual: 7.8, predicted: 8.0 }
-  ];
+  const scatterActualPredicted = model.actual_vs_predicted || [];
   const confusionClasses = model.classification_metrics.classes;
   const confusionMatrix = model.classification_metrics.confusion_matrix;
   const classPresentation: Record<string, { label: string; tone: string }> = {
@@ -120,6 +232,7 @@ export const MLModelManagement: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {fileSelector}
       {/* Model Metadata Header */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
         <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
@@ -154,6 +267,16 @@ export const MLModelManagement: React.FC = () => {
               <span className="block mt-1">
                 Dataset: {model.dataset_info.record_count} dòng mô phỏng; chia tập {model.dataset_info.train_test_split}; seed {model.dataset_info.random_seed}.
               </span>
+            )}
+            {model.data_mode === 'uploaded_csv' && (
+              <div role="note" className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl text-xs text-blue-900">
+                {model.metrics_notice}
+                {model.dataset_info && (
+                  <span className="block mt-1">
+                    File: {model.dataset_info.name}; {model.dataset_info.record_count} dòng; tập huấn luyện/kiểm tra {model.dataset_info.train_test_split}; seed {model.dataset_info.random_seed}.
+                  </span>
+                )}
+              </div>
             )}
           </div>
         )}
@@ -217,7 +340,7 @@ export const MLModelManagement: React.FC = () => {
         {/* Feature Importance BarChart */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
           <h4 className="text-sm font-bold text-slate-800 mb-1">Mức độ ảnh hưởng của các đặc trưng (Feature Importance)</h4>
-          <p className="text-xs text-slate-500 mb-4">Các đặc trưng được sắp xếp theo mức độ quan trọng trong artifact mô hình.</p>
+          <p className="text-xs text-slate-500 mb-4">Tỷ trọng tuyệt đối của các hệ số Ridge được huấn luyện từ file CSV đang chọn.</p>
 
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -235,14 +358,14 @@ export const MLModelManagement: React.FC = () => {
         {/* Actual vs Predicted Scatter */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
           <h4 className="text-sm font-bold text-slate-800 mb-1">So sánh Giá trị Thực tế vs Dự đoán (Actual vs Predicted)</h4>
-          <p className="text-xs text-slate-500 mb-4">Dữ liệu minh họa, không lấy từ tập kiểm tra của mô hình.</p>
+          <p className="text-xs text-slate-500 mb-4">Kết quả dự đoán trên các dòng được giữ lại để kiểm tra, không dùng khi huấn luyện.</p>
 
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                <XAxis type="number" dataKey="actual" name="Điểm thực tế" unit="đ" domain={[2, 10]} tick={{ fontSize: 11 }} />
-                <YAxis type="number" dataKey="predicted" name="Điểm dự đoán" unit="đ" domain={[2, 10]} tick={{ fontSize: 11 }} />
+                <XAxis type="number" dataKey="actual" name="Điểm thực tế" unit="đ" domain={[0, 10]} tick={{ fontSize: 11 }} />
+                <YAxis type="number" dataKey="predicted" name="Điểm dự đoán" unit="đ" domain={['auto', 'auto']} tick={{ fontSize: 11 }} />
                 <Tooltip cursor={{ strokeDasharray: '3 3' }} />
                 <Scatter name="Mẫu kiểm thử" data={scatterActualPredicted} fill="#2563eb" />
               </ScatterChart>
@@ -254,7 +377,7 @@ export const MLModelManagement: React.FC = () => {
       {/* Confusion Matrix Section */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
         <h4 className="text-sm font-bold text-slate-800 mb-1">Ma trận nhầm lẫn (Confusion Matrix)</h4>
-        <p className="text-xs text-slate-500 mb-4">Ma trận lấy trực tiếp từ artifact; thứ tự lớp theo dữ liệu huấn luyện.</p>
+        <p className="text-xs text-slate-500 mb-4">Kết quả phân loại trên tập kiểm tra của file CSV đang chọn.</p>
 
         <div className="overflow-x-auto">
           <table className="w-full text-center text-xs text-slate-700 max-w-xl mx-auto border border-slate-200 rounded-lg overflow-hidden">

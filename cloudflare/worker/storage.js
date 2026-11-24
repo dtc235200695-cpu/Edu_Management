@@ -1,12 +1,68 @@
 import { isAuthorized, invalidRequest, unauthorized } from "./security.js";
+import { createCsvModelInfo } from "./csv-model.js";
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const MAX_FILENAME_LENGTH = 120;
 
 export async function handleStorageRequest(request, env) {
     const url = new URL(request.url);
-    if (url.pathname !== "/internal/storage/objects") return null;
+    if (
+        url.pathname !== "/internal/storage/objects" &&
+        url.pathname !== "/internal/storage/model-info"
+    ) return null;
     if (!isAuthorized(request, env)) return unauthorized();
+
+    if (url.pathname === "/internal/storage/model-info") {
+        if (request.method !== "GET") {
+            return Response.json({ error: "Method not allowed" }, { status: 405 });
+        }
+        const key = url.searchParams.get("key");
+        if (
+            !key ||
+            key.length > 512 ||
+            !key.startsWith("imports/") ||
+            !key.toLowerCase().endsWith(".csv") ||
+            key.includes("\\") ||
+            key.split("/").some((part) => part === "..")
+        ) {
+            return invalidRequest("A valid R2 import key is required.");
+        }
+
+        try {
+            const object = await env.STORAGE.get(key);
+            if (!object) {
+                return Response.json(
+                    { success: false, error: "Không tìm thấy file CSV đã chọn trong R2." },
+                    { status: 404 },
+                );
+            }
+            if (object.size > MAX_UPLOAD_BYTES) {
+                return Response.json(
+                    { success: false, error: "CSV vượt quá giới hạn 10 MB." },
+                    { status: 413 },
+                );
+            }
+            const modelInfo = createCsvModelInfo(
+                await object.text(),
+                object.customMetadata?.filename || key.split("/").pop(),
+            );
+            return Response.json(modelInfo, {
+                headers: { "Cache-Control": "no-store" },
+            });
+        } catch (error) {
+            if (Number.isInteger(error.status) && error.status >= 400 && error.status < 500) {
+                return Response.json(
+                    { success: false, error: error.message },
+                    { status: error.status },
+                );
+            }
+            console.error("R2 model evaluation failed:", error.name || "Error");
+            return Response.json(
+                { success: false, error: "Không thể đọc hoặc đánh giá file CSV đã chọn." },
+                { status: 500 },
+            );
+        }
+    }
 
     if (request.method === "POST") {
         const contentType = request.headers.get("Content-Type") || "";

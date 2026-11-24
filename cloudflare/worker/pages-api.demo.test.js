@@ -20,7 +20,7 @@ const demoSeedRecords = createDemoSeedRecords();
 
 async function requestAsAdmin(
     path,
-    { method = "GET", body, courseRecords = demoSeedRecords } = {},
+    { method = "GET", body, courseRecords = demoSeedRecords, storageCsv = null } = {},
 ) {
     const record = { ...user };
     const env = {
@@ -55,6 +55,15 @@ async function requestAsAdmin(
                     },
                 };
             },
+        },
+        STORAGE: {
+            get: async (key) => key === "imports/2026/01/01/scores.csv" && storageCsv
+                ? {
+                    size: Buffer.byteLength(storageCsv),
+                    customMetadata: { filename: "scores.csv" },
+                    text: async () => storageCsv,
+                }
+                : null,
         },
     };
     const token = await issueSession(env, user);
@@ -213,16 +222,36 @@ test("prediction API rejects real student identifiers in demo mode", async () =>
     assert.equal(response.status, 400);
 });
 
-test("authenticated staff can load explicitly labeled synthetic model metrics", async () => {
-    const response = await requestAsAdmin("/api/ml/model-info");
+test("authenticated staff can load metrics computed from a selected R2 CSV", async () => {
+    const storageCsv = [
+        "attendance_rate,study_hours,assignment_score,quiz_score,completion_rate,previous_score,final_score",
+        "0.5,4,4,4,0.5,4,4",
+        "0.6,6,5,5,0.6,5,5",
+        "0.7,8,6,6,0.7,6,6",
+        "0.8,10,7,7,0.8,7,7",
+        "0.9,12,8,8,0.9,8,8",
+    ].join("\n");
+    const response = await requestAsAdmin(
+        "/api/ml/model-info?key=imports%2F2026%2F01%2F01%2Fscores.csv",
+        { storageCsv },
+    );
     const body = await response.json();
 
     assert.equal(response.status, 200);
     assert.equal(body.success, true);
-    assert.equal(body.data_mode, "synthetic_demo");
-    assert.equal(body.is_demo, true);
-    assert.equal(body.model_name, "EduInsight Synthetic Learning Model");
+    assert.equal(body.data_mode, "uploaded_csv");
+    assert.equal(body.is_demo, false);
+    assert.equal(body.model_name, "EduInsight CSV Model - scores.csv");
+    assert.equal(body.dataset_info.record_count, 5);
     assert.equal(body.classification_metrics.confusion_matrix.length, 3);
+});
+
+test("model-info requires a selected CSV key", async () => {
+    const response = await requestAsAdmin("/api/ml/model-info");
+    const body = await response.json();
+
+    assert.equal(response.status, 400);
+    assert.ok(body.error);
 });
 
 test("authenticated staff can load and update a labeled demo learning path", async () => {

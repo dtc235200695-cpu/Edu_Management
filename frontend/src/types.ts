@@ -184,7 +184,7 @@ export interface LearningPathItem {
 
 export interface ModelInfo {
   model_name: string;
-  data_mode?: 'synthetic_demo';
+  data_mode?: 'synthetic_demo' | 'uploaded_csv';
   is_demo?: boolean;
   demo_notice?: string;
   dataset_info?: {
@@ -203,7 +203,7 @@ export interface ModelInfo {
     mae: number;
     rmse: number;
     r2_score: number;
-    linear_baseline_r2: number;
+    baseline_r2: number;
   };
   classification_metrics: {
     accuracy: number;
@@ -214,6 +214,11 @@ export interface ModelInfo {
     confusion_matrix: number[][];
   };
   feature_importances: Record<string, number>;
+  actual_vs_predicted?: Array<{
+    actual: number;
+    predicted: number;
+  }>;
+  metrics_notice?: string;
 }
 
 export type UserRole = 'lecturer' | 'student' | 'admin';
