@@ -1,6 +1,6 @@
 // frontend/src/types.ts
 
-export type PageId = 
+export type PageId =
   | 'dashboard'
   | 'students'
   | 'analytics'
@@ -133,14 +133,14 @@ export const USER_PERSONAS: Record<UserRole, UserPersona> = {
   },
   student: {
     id: 'SV2026',
-    name: 'Nguyễn Thị Hương Giang',
+    name: 'Nguyễn Văn A',
     role: 'student',
     roleTitle: 'Sinh viên',
     roleBadge: 'Sinh viên',
-    department: 'Lớp K24-CNTT01',
+    department: 'Lớp K22-CNTT01',
     avatarText: 'SV',
     studentId: 'SV2026',
-    className: 'K24-CNTT01'
+    className: 'K22-CNTT01'
   },
   admin: {
     id: 'AD001',

@@ -1,12 +1,12 @@
 // frontend/src/components/Header.tsx
 import React, { useState } from 'react';
-import { 
-  Search, 
-  Bell, 
-  ChevronDown, 
-  CheckCircle2, 
-  Menu, 
-  LogOut 
+import {
+  Search,
+  Bell,
+  ChevronDown,
+  CheckCircle2,
+  Menu,
+  LogOut
 } from 'lucide-react';
 import { UserPersona, UserRole } from '../types';
 
@@ -19,10 +19,10 @@ interface HeaderProps {
   onToggleMobileMenu?: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ 
-  pageTitle, 
-  currentUser, 
-  onSwitchRole, 
+export const Header: React.FC<HeaderProps> = ({
+  pageTitle,
+  currentUser,
+  onSwitchRole,
   onSearchChange,
   onLogout,
   onToggleMobileMenu
@@ -86,7 +86,7 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         {/* Notification Bell */}
-        <button 
+        <button
           title="Thông báo hệ thống"
           className="relative p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors"
         >
@@ -103,7 +103,7 @@ export const Header: React.FC<HeaderProps> = ({
             <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl ${getAvatarBg(currentUser.role)} text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-xs`}>
               {currentUser.avatarText}
             </div>
-            
+
             <div className="hidden sm:block text-left">
               <div className="flex items-center space-x-1.5">
                 <p className="text-xs sm:text-sm font-semibold text-slate-800 leading-tight truncate max-w-[120px]">
@@ -117,7 +117,7 @@ export const Header: React.FC<HeaderProps> = ({
                 {currentUser.department}
               </p>
             </div>
-            
+
             <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
           </button>
 
@@ -136,9 +136,8 @@ export const Header: React.FC<HeaderProps> = ({
                     onSwitchRole('lecturer');
                     setIsRoleMenuOpen(false);
                   }}
-                  className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-left text-xs transition-colors ${
-                    currentUser.role === 'lecturer' ? 'bg-blue-50 text-blue-900 font-bold' : 'hover:bg-slate-50 text-slate-700'
-                  }`}
+                  className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-left text-xs transition-colors ${currentUser.role === 'lecturer' ? 'bg-blue-50 text-blue-900 font-bold' : 'hover:bg-slate-50 text-slate-700'
+                    }`}
                 >
                   <div className="w-7 h-7 rounded-lg bg-blue-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
                     GV
@@ -156,16 +155,15 @@ export const Header: React.FC<HeaderProps> = ({
                     onSwitchRole('student');
                     setIsRoleMenuOpen(false);
                   }}
-                  className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-left text-xs transition-colors ${
-                    currentUser.role === 'student' ? 'bg-purple-50 text-purple-900 font-bold' : 'hover:bg-slate-50 text-slate-700'
-                  }`}
+                  className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-left text-xs transition-colors ${currentUser.role === 'student' ? 'bg-purple-50 text-purple-900 font-bold' : 'hover:bg-slate-50 text-slate-700'
+                    }`}
                 >
                   <div className="w-7 h-7 rounded-lg bg-purple-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
                     SV
                   </div>
                   <div className="flex-1 truncate">
-                    <p className="font-semibold text-slate-800">Hương Giang (SV2026)</p>
-                    <p className="text-[11px] text-slate-400 truncate">Lớp K24-CNTT01</p>
+                    <p className="font-semibold text-slate-800">Nguyễn Văn A (SV2026)</p>
+                    <p className="text-[11px] text-slate-400 truncate">Lớp K22-CNTT01</p>
                   </div>
                   {currentUser.role === 'student' && <CheckCircle2 className="w-4 h-4 text-purple-600 shrink-0" />}
                 </button>
@@ -176,9 +174,8 @@ export const Header: React.FC<HeaderProps> = ({
                     onSwitchRole('admin');
                     setIsRoleMenuOpen(false);
                   }}
-                  className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-left text-xs transition-colors ${
-                    currentUser.role === 'admin' ? 'bg-amber-50 text-amber-900 font-bold' : 'hover:bg-slate-50 text-slate-700'
-                  }`}
+                  className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-left text-xs transition-colors ${currentUser.role === 'admin' ? 'bg-amber-50 text-amber-900 font-bold' : 'hover:bg-slate-50 text-slate-700'
+                    }`}
                 >
                   <div className="w-7 h-7 rounded-lg bg-amber-600 text-white flex items-center justify-center text-xs font-bold shrink-0">
                     AD

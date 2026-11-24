@@ -1,15 +1,15 @@
 // frontend/src/pages/SystemSettings.tsx
 import React, { useState } from 'react';
-import { 
-  Settings, 
-  ShieldCheck, 
-  Database, 
-  Cloud, 
-  Cpu, 
-  User, 
-  Lock, 
-  Server, 
-  CheckCircle2, 
+import {
+  Settings,
+  ShieldCheck,
+  Database,
+  Cloud,
+  Cpu,
+  User,
+  Lock,
+  Server,
+  CheckCircle2,
   HelpCircle,
   ExternalLink
 } from 'lucide-react';
@@ -23,9 +23,8 @@ export const SystemSettings: React.FC = () => {
       <div className="bg-white p-2 sm:p-3 rounded-xl border border-slate-200 shadow-2xs flex overflow-x-auto space-x-2">
         <button
           onClick={() => setActiveTab('cloudflare')}
-          className={`shrink-0 flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
-            activeTab === 'cloudflare' ? 'bg-blue-600 text-white shadow-2xs' : 'text-slate-600 hover:bg-slate-100'
-          }`}
+          className={`shrink-0 flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${activeTab === 'cloudflare' ? 'bg-blue-600 text-white shadow-2xs' : 'text-slate-600 hover:bg-slate-100'
+            }`}
         >
           <Cloud className="w-4 h-4" />
           <span>Hạ tầng Cloudflare</span>
@@ -33,9 +32,8 @@ export const SystemSettings: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('roles')}
-          className={`shrink-0 flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
-            activeTab === 'roles' ? 'bg-blue-600 text-white shadow-2xs' : 'text-slate-600 hover:bg-slate-100'
-          }`}
+          className={`shrink-0 flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${activeTab === 'roles' ? 'bg-blue-600 text-white shadow-2xs' : 'text-slate-600 hover:bg-slate-100'
+            }`}
         >
           <Lock className="w-4 h-4" />
           <span>Tài khoản &amp; Phân quyền</span>
@@ -43,9 +41,8 @@ export const SystemSettings: React.FC = () => {
 
         <button
           onClick={() => setActiveTab('about')}
-          className={`shrink-0 flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${
-            activeTab === 'about' ? 'bg-blue-600 text-white shadow-2xs' : 'text-slate-600 hover:bg-slate-100'
-          }`}
+          className={`shrink-0 flex items-center space-x-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all ${activeTab === 'about' ? 'bg-blue-600 text-white shadow-2xs' : 'text-slate-600 hover:bg-slate-100'
+            }`}
         >
           <Server className="w-4 h-4" />
           <span>Thông tin phiên bản</span>
@@ -190,13 +187,13 @@ export const SystemSettings: React.FC = () => {
                   SV
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900">Hương Giang (SV2026)</h4>
+                  <h4 className="text-sm font-bold text-slate-900">Nguyễn Văn A (SV2026)</h4>
                   <span className="text-[11px] text-purple-700 font-semibold">Vai trò: Sinh viên</span>
                 </div>
               </div>
-              <p className="text-xs text-slate-600">Lớp K24-CNTT01. Quyền xem hồ sơ cá nhân, đánh dấu tiến độ bài học, chạy dự đoán ML kết quả học tập.</p>
+              <p className="text-xs text-slate-600">Lớp K22-CNTT01. Quyền xem hồ sơ cá nhân, đánh dấu tiến độ bài học, chạy dự đoán ML kết quả học tập.</p>
               <div className="text-[11px] font-mono text-slate-500 pt-1 border-t border-purple-100">
-                Email: giang.sv2026@student.edu.vn
+                Email: a.sv2026@student.edu.vn
               </div>
             </div>
 
