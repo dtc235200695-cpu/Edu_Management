@@ -99,6 +99,24 @@ router.get("/api/ml/model-info", ...staffOnly, async (_req, res) => {
   return res.set("Cache-Control", "no-store").json({ ...metrics, success: true });
 });
 
+const unavailableLearningPath = (_req, res) => res.status(503).json({
+  success: false,
+  error: "Lộ trình học tập chưa khả dụng vì dữ liệu kết quả theo chủ đề chưa được tích hợp và xác thực.",
+});
+
+router.get(
+  "/api/students/:studentId/learning-path",
+  requireSession,
+  requireRole(["student", "lecturer", "admin"]),
+  unavailableLearningPath,
+);
+router.patch(
+  "/api/learning-path/:pathId",
+  requireSession,
+  requireRole(["student", "lecturer", "admin"]),
+  unavailableLearningPath,
+);
+
 router.get(
   "/api/cloudflare/health",
   requireSession,

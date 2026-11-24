@@ -110,6 +110,13 @@ export const MLModelManagement: React.FC = () => {
     { actual: 6.2, predicted: 6.0 },
     { actual: 7.8, predicted: 8.0 }
   ];
+  const confusionClasses = model.classification_metrics.classes;
+  const confusionMatrix = model.classification_metrics.confusion_matrix;
+  const classPresentation: Record<string, { label: string; tone: string }> = {
+    'Cao': { label: 'Cao (Nguy cơ)', tone: 'text-red-700 bg-red-50' },
+    'Trung bình': { label: 'Trung bình', tone: 'text-amber-700 bg-amber-50' },
+    'Thấp': { label: 'Thấp (An toàn)', tone: 'text-emerald-700 bg-emerald-50' },
+  };
 
   return (
     <div className="space-y-6">
@@ -168,7 +175,7 @@ export const MLModelManagement: React.FC = () => {
           <div className="p-3 bg-emerald-50 rounded-xl text-center">
             <span className="text-[11px] font-bold text-emerald-700 uppercase">R² Score</span>
             <p className="text-lg font-extrabold text-emerald-950 mt-0.5">{model.regression_metrics.r2_score}</p>
-            <span className="text-[10px] text-emerald-600">Độ khớp &gt; 95%</span>
+            <span className="text-[10px] text-emerald-600">Điểm trên tập kiểm tra</span>
           </div>
 
           <div className="p-3 bg-teal-50 rounded-xl text-center">
@@ -210,7 +217,7 @@ export const MLModelManagement: React.FC = () => {
         {/* Feature Importance BarChart */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
           <h4 className="text-sm font-bold text-slate-800 mb-1">Mức độ ảnh hưởng của các đặc trưng (Feature Importance)</h4>
-          <p className="text-xs text-slate-500 mb-4">Điểm bài tập và tiến độ hoàn thành là 2 nhân tố quyết định lớn nhất</p>
+          <p className="text-xs text-slate-500 mb-4">Các đặc trưng được sắp xếp theo mức độ quan trọng trong artifact mô hình.</p>
 
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -228,7 +235,7 @@ export const MLModelManagement: React.FC = () => {
         {/* Actual vs Predicted Scatter */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
           <h4 className="text-sm font-bold text-slate-800 mb-1">So sánh Giá trị Thực tế vs Dự đoán (Actual vs Predicted)</h4>
-          <p className="text-xs text-slate-500 mb-4">Các điểm phân bố sát đường chéo lý tưởng thể hiện mô hình hội tụ tốt</p>
+          <p className="text-xs text-slate-500 mb-4">Dữ liệu minh họa, không lấy từ tập kiểm tra của mô hình.</p>
 
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -247,37 +254,39 @@ export const MLModelManagement: React.FC = () => {
       {/* Confusion Matrix Section */}
       <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
         <h4 className="text-sm font-bold text-slate-800 mb-1">Ma trận nhầm lẫn (Confusion Matrix)</h4>
-        <p className="text-xs text-slate-500 mb-4">Đánh giá khả năng phân loại sinh viên theo 3 mức nguy cơ: Thấp, Trung bình, Cao</p>
+        <p className="text-xs text-slate-500 mb-4">Ma trận lấy trực tiếp từ artifact; thứ tự lớp theo dữ liệu huấn luyện.</p>
 
         <div className="overflow-x-auto">
           <table className="w-full text-center text-xs text-slate-700 max-w-xl mx-auto border border-slate-200 rounded-lg overflow-hidden">
             <thead className="bg-slate-100 text-slate-800 font-bold">
               <tr>
                 <th className="p-3 text-left border-r border-slate-200">Thực tế \ Dự đoán</th>
-                <th className="p-3 text-emerald-700 bg-emerald-50">Dự đoán Thấp</th>
-                <th className="p-3 text-amber-700 bg-amber-50">Dự đoán Trung bình</th>
-                <th className="p-3 text-red-700 bg-red-50">Dự đoán Cao</th>
+                {confusionClasses.map((className) => {
+                  const presentation = classPresentation[className] || { label: className, tone: '' };
+                  return <th key={className} className={`p-3 ${presentation.tone}`}>Dự đoán {presentation.label}</th>;
+                })}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200">
-              <tr>
-                <td className="p-3 font-bold text-left bg-slate-50 border-r border-slate-200">Lớp Thấp (An toàn)</td>
-                <td className="p-3 font-extrabold text-emerald-800 bg-emerald-100/50">119 (Đúng)</td>
-                <td className="p-3 text-slate-500">3</td>
-                <td className="p-3 text-slate-400">0</td>
-              </tr>
-              <tr>
-                <td className="p-3 font-bold text-left bg-slate-50 border-r border-slate-200">Lớp Trung bình</td>
-                <td className="p-3 text-slate-500">3</td>
-                <td className="p-3 font-extrabold text-amber-800 bg-amber-100/50">190 (Đúng)</td>
-                <td className="p-3 text-slate-500">1</td>
-              </tr>
-              <tr>
-                <td className="p-3 font-bold text-left bg-slate-50 border-r border-slate-200">Lớp Cao (Nguy cơ)</td>
-                <td className="p-3 text-slate-400">0</td>
-                <td className="p-3 text-slate-500">2</td>
-                <td className="p-3 font-extrabold text-red-800 bg-red-100/50">132 (Đúng)</td>
-              </tr>
+              {confusionClasses.map((className, rowIndex) => {
+                const presentation = classPresentation[className] || { label: className, tone: '' };
+                return (
+                  <tr key={className}>
+                    <td className={`p-3 font-bold text-left border-r border-slate-200 ${presentation.tone}`}>
+                      Thực tế {presentation.label}
+                    </td>
+                    {confusionClasses.map((_predictedClass, columnIndex) => (
+                      <td
+                        key={`${className}-${columnIndex}`}
+                        className={rowIndex === columnIndex ? 'p-3 font-extrabold bg-blue-50 text-blue-800' : 'p-3 text-slate-500'}
+                      >
+                        {confusionMatrix[rowIndex]?.[columnIndex] ?? 0}
+                        {rowIndex === columnIndex && <span className="font-medium"> (Đúng)</span>}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

@@ -91,10 +91,12 @@ The Pages dashboard, analytics, and student list use deterministic synthetic
 demo records and display a DEMO warning; they are not real learner data and
 must not be used for student assessment. Demo student records can only be
 created with `DEMO-*` IDs and generated demo names; they are stored separately
-in the D1 `demo_students` table. The prediction endpoint returns a labeled
-heuristic estimate, not the trained ML model. Learning-path APIs remain
-unavailable until an authorized dataset has been integrated and validated.
-Never present demo metrics or estimates as real learner data.
+in the D1 `demo_students` table. The ML Model page reads the synthetic
+`ml/model_metrics.json` artifact and labels it as demo data. The prediction
+endpoint returns a labeled heuristic estimate, not the trained ML model.
+Learning-path APIs return an explicit unavailable response until an authorized
+dataset with validated topic results has been integrated. Never present demo
+metrics or estimates as real learner data.
 
 ## Generate the ML demo artifacts
 

@@ -60,6 +60,25 @@ test("login and password-reset routes return JSON instead of an HTML route-not-f
   });
 });
 
+test("learning-path API routes are registered and require an authenticated session", async () => {
+  await withServer(async (baseUrl) => {
+    const getResponse = await fetch(`${baseUrl}/api/students/DEMO-0001/learning-path`);
+    const patchResponse = await fetch(`${baseUrl}/api/learning-path/1`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Origin: config.appOrigin,
+      },
+      body: JSON.stringify({ status: "Đã hoàn thành" }),
+    });
+
+    assert.equal(getResponse.status, 401);
+    assert.equal(patchResponse.status, 401);
+    assert.match(getResponse.headers.get("content-type") || "", /application\/json/);
+    assert.match(patchResponse.headers.get("content-type") || "", /application\/json/);
+  });
+});
+
 test("Worker internal D1 and R2 routes require the backend secret", async () => {
   const response = await worker.fetch(
     new Request("https://worker.example/internal/users"),

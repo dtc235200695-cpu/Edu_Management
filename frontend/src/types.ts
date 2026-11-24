@@ -183,6 +183,7 @@ export interface LearningPathItem {
 
 export interface ModelInfo {
   model_name: string;
+  data_mode?: 'synthetic_demo';
   is_demo?: boolean;
   demo_notice?: string;
   dataset_info?: {

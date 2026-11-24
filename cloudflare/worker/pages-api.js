@@ -1,6 +1,7 @@
 import { handleStorageRequest } from "./storage.js";
 import { handleUserRequest } from "./users.js";
 import { hashPassword, verifyPassword } from "./password-crypto.js";
+import modelMetrics from "../../ml/model_metrics.json" with { type: "json" };
 import {
     createDemoAnalytics,
     createDemoDashboardOverview,
@@ -925,14 +926,19 @@ async function handleRequest(context) {
             })),
         }, 200, { "Cache-Control": "no-store" });
     }
-    if (
-        path === "/api/ml/model-info" ||
-        path.startsWith("/api/learning-path")
-    ) {
+    if (path === "/api/ml/model-info") {
+        await requireRole(request, env, ["admin", "lecturer"]);
+        return json({
+            ...modelMetrics,
+            success: true,
+            data_mode: "synthetic_demo",
+        }, 200, { "Cache-Control": "no-store" });
+    }
+    if (path.startsWith("/api/learning-path") || /\/learning-path$/.test(path)) {
         await requireRole(request, env, ["student", "lecturer", "admin"]);
         return json({
             success: false,
-            error: "Dữ liệu học tập production chưa được tích hợp và xác thực.",
+            error: "Lộ trình học tập chưa khả dụng vì dữ liệu kết quả theo chủ đề chưa được tích hợp và xác thực.",
         }, 503);
     }
     if (path.startsWith("/api/")) {

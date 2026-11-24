@@ -150,3 +150,24 @@ test("prediction API rejects real student identifiers in demo mode", async () =>
 
     assert.equal(response.status, 400);
 });
+
+test("authenticated staff can load explicitly labeled synthetic model metrics", async () => {
+    const response = await requestAsAdmin("/api/ml/model-info");
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.success, true);
+    assert.equal(body.data_mode, "synthetic_demo");
+    assert.equal(body.is_demo, true);
+    assert.equal(body.model_name, "EduInsight Synthetic Learning Model");
+    assert.equal(body.classification_metrics.confusion_matrix.length, 3);
+});
+
+test("learning paths remain unavailable until validated topic results exist", async () => {
+    const response = await requestAsAdmin("/api/students/DEMO-0001/learning-path");
+    const body = await response.json();
+
+    assert.equal(response.status, 503);
+    assert.equal(body.success, false);
+    assert.match(body.error, /chưa khả dụng/i);
+});

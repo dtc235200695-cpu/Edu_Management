@@ -55,6 +55,7 @@ export const LearningPath: React.FC<LearningPathProps> = ({ initialStudentId, is
   const loadPath = async (id: string) => {
     setLoading(true);
     setError(null);
+    setPathItems([]);
     try {
       const res = await fetchLearningPath(id);
       if (res.success) {
@@ -119,27 +120,29 @@ export const LearningPath: React.FC<LearningPathProps> = ({ initialStudentId, is
       {error && <p role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">{error}</p>}
 
       {/* Progress Card */}
-      <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs">
-        <div className="flex items-center justify-between mb-2">
-          <div>
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tiến độ hoàn thành lộ trình</span>
-            <div className="text-xl font-bold text-slate-900 mt-0.5">
-              Đã hoàn thành {completedCount} / {pathItems.length} chủ đề ({progressPercent}%)
+      {!error && (
+        <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Tiến độ hoàn thành lộ trình</span>
+              <div className="text-xl font-bold text-slate-900 mt-0.5">
+                Đã hoàn thành {completedCount} / {pathItems.length} chủ đề ({progressPercent}%)
+              </div>
             </div>
+            <span className="px-3 py-1 bg-blue-50 text-blue-700 font-bold text-sm rounded-full border border-blue-100">
+              Học kỳ 1 • Điện toán đám mây
+            </span>
           </div>
-          <span className="px-3 py-1 bg-blue-50 text-blue-700 font-bold text-sm rounded-full border border-blue-100">
-            Học kỳ 1 • Điện toán đám mây
-          </span>
-        </div>
 
-        {/* Progress Bar */}
-        <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden mt-3">
-          <div 
-            className="bg-blue-600 h-3 rounded-full transition-all duration-300"
-            style={{ width: `${progressPercent}%` }}
-          ></div>
+          {/* Progress Bar */}
+          <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden mt-3">
+            <div
+              className="bg-blue-600 h-3 rounded-full transition-all duration-300"
+              style={{ width: `${progressPercent}%` }}
+            ></div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Learning Items List */}
       <div className="space-y-4">
@@ -148,7 +151,7 @@ export const LearningPath: React.FC<LearningPathProps> = ({ initialStudentId, is
             <RefreshCw className="w-6 h-6 animate-spin mx-auto text-blue-600 mb-2" />
             <span className="text-sm text-slate-500 font-medium">Đang xây dựng lộ trình thích ứng...</span>
           </div>
-        ) : pathItems.length === 0 ? (
+        ) : error ? null : pathItems.length === 0 ? (
           <div className="bg-white p-12 text-center rounded-xl border border-slate-200 text-slate-400">
             Chưa có chủ đề nào trong lộ trình của sinh viên này.
           </div>
