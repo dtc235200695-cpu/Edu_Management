@@ -149,6 +149,25 @@ router.get(
   },
 );
 
+router.post("/api/data/generate-demo-labels", ...staffOnly, async (req, res, next) => {
+  const key = typeof req.body?.key === "string" ? req.body.key : "";
+  if (!key) {
+    return res.status(400).json({ success: false, error: "Hãy chọn một file CSV trong R2." });
+  }
+  try {
+    const result = await requestStorage(
+      `/internal/storage/generate-demo-labels?key=${encodeURIComponent(key)}`,
+      { method: "POST" },
+    );
+    return res
+      .status(result.already_exists ? 200 : 201)
+      .set("Cache-Control", "no-store")
+      .json(result);
+  } catch (error) {
+    return next(error);
+  }
+});
+
 router.post(
   "/api/data/import",
   ...staffOnly,

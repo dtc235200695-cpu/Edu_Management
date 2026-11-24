@@ -145,6 +145,15 @@ export async function fetchImportHistory() {
   return request<ApiResponse & { history: ImportHistoryItem[] }>('/data/import-history');
 }
 
+export async function generateDemoLabeledCsv(key: string) {
+  return request<ApiResponse & {
+    r2_key: string;
+    filename: string;
+    already_exists: boolean;
+    generated_labels: boolean;
+  }>('/data/generate-demo-labels', jsonRequest('POST', { key }));
+}
+
 export async function fetchModelInfo(key: string) {
   const query = new URLSearchParams({ key });
   return request<ApiResponse & ModelInfo>(`/ml/model-info?${query.toString()}`);

@@ -122,16 +122,12 @@ function validateRows(text) {
     const riskColumn = RISK_COLUMNS.find((column) => headers.includes(column));
     const hasRegression = Boolean(scoreColumn);
     const hasRiskLevel = Boolean(riskColumn);
-    if (!hasRegression && !hasRiskLevel) {
-        throw invalidCsv(
-            `CSV cần có cột điểm (${SCORE_COLUMNS.slice(0, -1).join(", ")}) hoặc cột nhãn rủi ro (${RISK_COLUMNS.join(", ")}). Cột hiện có: ${headers.join(", ")}.`,
-        );
-    }
     if (rows.length - 1 > MAX_ROWS) {
         throw invalidCsv(`Mỗi file chỉ hỗ trợ tối đa ${MAX_ROWS} dòng dữ liệu.`);
     }
 
     const indexes = Object.fromEntries(headers.map((header, index) => [header, index]));
+    let generatedRiskLabels = !hasRiskLevel;
     const data = rows.slice(1).map((values, rowIndex) => {
         if (values.length !== headers.length) {
             throw invalidCsv(`Số cột không hợp lệ ở dòng ${rowIndex + 2}.`);
@@ -165,19 +161,23 @@ function validateRows(text) {
         if (rawRisk && !providedRisk) {
             throw invalidCsv(`risk_level không hợp lệ ở dòng ${rowIndex + 2}.`);
         }
-        if (!providedRisk && score === null) {
-            throw invalidCsv(`Thiếu risk_level ở dòng ${rowIndex + 2}.`);
-        }
+        if (!providedRisk && score === null) generatedRiskLabels = true;
         record.final_score = score;
-        record.risk_level = providedRisk ||
-            (score < 5 ? "Cao" : score < 7 ? "Trung bình" : "Thấp");
+        if (providedRisk) {
+            record.risk_level = providedRisk;
+        } else if (score !== null) {
+            generatedRiskLabels = true;
+            record.risk_level = score < 5 ? "Cao" : score < 7 ? "Trung bình" : "Thấp";
+        } else {
+            record.risk_level = deriveDemoRiskLevel(record);
+        }
         return record;
     });
 
     if (data.length < 5) {
         throw invalidCsv("Cần ít nhất 5 dòng dữ liệu để đánh giá mô hình.");
     }
-    return { records: data, hasRegression };
+    return { records: data, hasRegression, generatedRiskLabels };
 }
 
 function normalizeRiskLevel(value) {
@@ -197,6 +197,19 @@ function normalizeRiskLevel(value) {
         return "Trung bình";
     }
     return null;
+}
+
+function deriveDemoRiskLevel(record) {
+    const estimatedScore = Math.max(0, Math.min(10,
+        0.15 * record.attendance_rate * 10
+        + 0.12 * record.study_hours / 3
+        + 0.22 * record.assignment_score
+        + 0.20 * record.quiz_score
+        + 0.13 * record.completion_rate * 10
+        + 0.18 * record.previous_score
+        + 0.25 * (record.assignment_score * record.quiz_score / 10 - 4),
+    ));
+    return estimatedScore < 5 ? "Cao" : estimatedScore < 7 ? "Trung bình" : "Thấp";
 }
 
 function seededShuffle(values) {
@@ -393,8 +406,44 @@ function round(value) {
     return Math.round(value * 10000) / 10000;
 }
 
-export function createCsvModelInfo(text, fileName) {
-    const { records, hasRegression } = validateRows(text);
+function stringifyCsv(rows) {
+    return rows.map((row) => row.map((value) => {
+        const text = value === undefined || value === null ? "" : String(value);
+        return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    }).join(",")).join("\r\n") + "\r\n";
+}
+
+export function createDemoLabeledCsv(text) {
+    const rows = parseCsv(text);
+    const { records, generatedRiskLabels } = validateRows(text);
+    if (!generatedRiskLabels) {
+        const error = new Error("CSV đã có nhãn risk_level; không cần tạo nhãn demo.");
+        error.status = 409;
+        throw error;
+    }
+
+    const headers = rows[0].map((header) => header.trim());
+    const normalizedHeaders = headers.map(normalizeHeader);
+    const riskColumn = RISK_COLUMNS.find((column) => normalizedHeaders.includes(column));
+    const riskIndex = riskColumn ? normalizedHeaders.indexOf(riskColumn) : -1;
+    const output = [riskIndex === -1 ? [...headers, "risk_level"] : headers];
+    records.forEach((record, index) => {
+        const values = [...rows[index + 1]];
+        if (riskIndex === -1) {
+            values.push(record.risk_level);
+        } else if (!values[riskIndex].trim()) {
+            values[riskIndex] = record.risk_level;
+        }
+        output.push(values);
+    });
+    return stringifyCsv(output);
+}
+
+export function createCsvModelInfo(text, fileName, options = {}) {
+    const validated = validateRows(text);
+    const { records, hasRegression } = validated;
+    const generatedRiskLabels = validated.generatedRiskLabels ||
+        options.generatedRiskLabels === true;
     const shuffled = seededShuffle(records);
     const testSize = Math.max(2, Math.floor(records.length * 0.2));
     const testRecords = shuffled.slice(0, testSize);
@@ -424,16 +473,28 @@ export function createCsvModelInfo(text, fileName) {
     const fileLabel = typeof fileName === "string" && fileName
         ? fileName
         : "selected.csv";
+    const demoNotice = generatedRiskLabels
+        ? options.generatedRiskLabels
+            ? "Cột risk_level của bản CSV này được tạo bằng quy tắc demo từ các đặc trưng; đây không phải nhãn thực."
+            : hasRegression
+                ? "CSV không có nhãn risk_level; nhãn phân loại được suy ra từ final_score theo ngưỡng demo."
+                : "CSV không có final_score hoặc risk_level; nhãn rủi ro được ước tính bằng quy tắc demo từ 6 đặc trưng."
+        : undefined;
 
     return {
         success: true,
         data_mode: "uploaded_csv",
-        is_demo: false,
+        is_demo: generatedRiskLabels,
+        generated_risk_labels: generatedRiskLabels,
+        demo_labeled_copy: options.demoLabeledCopy === true,
+        ...(demoNotice ? { demo_notice: demoNotice } : {}),
         model_name: `EduInsight CSV Model - ${fileLabel}`,
         algorithm_regression: hasRegression ? "Ridge Regression" : null,
         algorithm_classification: "Gaussian Naive Bayes",
         trained_at: new Date().toISOString(),
-        model_version: hasRegression ? "csv-ridge-nb-v1" : "csv-nb-v1",
+        model_version: generatedRiskLabels
+            ? hasRegression ? "csv-ridge-nb-demo-v1" : "csv-nb-demo-v1"
+            : hasRegression ? "csv-ridge-nb-v1" : "csv-nb-v1",
         total_training_samples: trainRecords.length,
         features: FEATURES,
         regression_metrics: hasRegression
@@ -455,7 +516,11 @@ export function createCsvModelInfo(text, fileName) {
             predicted: round(predictedScores[index]),
         })) : [],
         metrics_notice: hasRegression
-            ? "Metrics được tính từ file CSV đã chọn trên tập kiểm tra; độ tin cậy phụ thuộc số lượng và chất lượng dữ liệu."
-            : "CSV không có final_score nên chỉ đánh giá phân loại risk_level; không hiển thị metrics hồi quy.",
+            ? generatedRiskLabels
+                ? "Metrics hồi quy dùng final_score trong file; metrics phân loại chỉ đo mức khớp với nhãn demo được sinh ra."
+                : "Metrics được tính từ file CSV đã chọn trên tập kiểm tra; độ tin cậy phụ thuộc số lượng và chất lượng dữ liệu."
+            : generatedRiskLabels
+                ? "Chỉ có metrics phân loại theo nhãn demo được sinh từ đặc trưng; không có ground truth để đánh giá hiệu quả dự đoán thực tế."
+                : "CSV không có final_score nên chỉ đánh giá phân loại risk_level; không hiển thị metrics hồi quy.",
     };
 }

@@ -1,6 +1,11 @@
 // frontend/src/pages/MLModelManagement.tsx
 import React, { useState, useEffect } from 'react';
-import { fetchImportHistory, fetchModelInfo, getErrorMessage } from '../api';
+import {
+  fetchImportHistory,
+  fetchModelInfo,
+  generateDemoLabeledCsv,
+  getErrorMessage,
+} from '../api';
 import { ImportHistoryItem, ModelInfo } from '../types';
 import { 
   Cpu, 
@@ -29,6 +34,9 @@ export const MLModelManagement: React.FC = () => {
   const [filesLoading, setFilesLoading] = useState(true);
   const [filesError, setFilesError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
+  const [savingDemoCopy, setSavingDemoCopy] = useState(false);
+  const [demoCopyMessage, setDemoCopyMessage] = useState<string | null>(null);
+  const [demoCopyError, setDemoCopyError] = useState<string | null>(null);
 
   useEffect(() => {
     loadFiles();
@@ -59,6 +67,29 @@ export const MLModelManagement: React.FC = () => {
       setFilesError(getErrorMessage(err, 'Không thể tải danh sách CSV trong R2'));
     } finally {
       setFilesLoading(false);
+    }
+  };
+
+  const saveDemoLabeledCopy = async () => {
+    if (!selectedKey) return;
+    setSavingDemoCopy(true);
+    setDemoCopyMessage(null);
+    setDemoCopyError(null);
+    try {
+      const result = await generateDemoLabeledCsv(selectedKey);
+      if (!result.success) throw new Error('Không thể tạo bản CSV có nhãn demo.');
+      setSelectedKey(result.r2_key);
+      setDemoCopyMessage(
+        result.already_exists
+          ? `Bản CSV đã có sẵn trong R2: ${result.filename}.`
+          : `Đã tạo và lưu bản CSV có nhãn demo vào R2: ${result.filename}.`,
+      );
+      await loadFiles();
+      setSelectedKey(result.r2_key);
+    } catch (err) {
+      setDemoCopyError(getErrorMessage(err, 'Không thể lưu bản CSV có nhãn demo vào R2'));
+    } finally {
+      setSavingDemoCopy(false);
     }
   };
 
@@ -284,6 +315,22 @@ export const MLModelManagement: React.FC = () => {
               <span className="block mt-1">
                 File: {model.dataset_info.name}; {model.dataset_info.record_count} dòng; tập huấn luyện/kiểm tra {model.dataset_info.train_test_split}; seed {model.dataset_info.random_seed}.
               </span>
+            )}
+            {model.generated_risk_labels && !model.demo_labeled_copy && (
+              <button
+                type="button"
+                onClick={saveDemoLabeledCopy}
+                disabled={savingDemoCopy}
+                className="mt-3 block rounded-lg bg-blue-600 px-3 py-2 font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+              >
+                {savingDemoCopy ? 'Đang tạo và tải CSV lên R2...' : 'Tạo bản CSV có nhãn demo và lưu vào R2'}
+              </button>
+            )}
+            {demoCopyMessage && (
+              <p role="status" className="mt-2 text-emerald-700">{demoCopyMessage}</p>
+            )}
+            {demoCopyError && (
+              <p role="alert" className="mt-2 text-red-700">{demoCopyError}</p>
             )}
           </div>
         )}

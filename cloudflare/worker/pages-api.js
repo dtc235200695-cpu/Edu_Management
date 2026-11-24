@@ -1004,6 +1004,20 @@ async function handleRequest(context) {
         }
         return json(createDemoPrediction(input), 200, { "Cache-Control": "no-store" });
     }
+    if (method === "POST" && path === "/api/data/generate-demo-labels") {
+        await requireRole(request, env, ["admin", "lecturer"]);
+        const body = await readJson(request);
+        if (typeof body.key !== "string" || !body.key) {
+            return json({ success: false, error: "Hãy chọn một file CSV trong R2." }, 400);
+        }
+        const response = await invokeStorage(
+            `/internal/storage/generate-demo-labels?key=${encodeURIComponent(body.key)}`,
+            request,
+            env,
+            "POST",
+        );
+        return json(await response.json(), response.status, { "Cache-Control": "no-store" });
+    }
     if (method === "GET" && path === "/api/data/import-history") {
         await requireRole(request, env, ["admin", "lecturer"]);
         const response = await invokeStorage(

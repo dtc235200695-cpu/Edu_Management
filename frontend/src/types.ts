@@ -186,6 +186,8 @@ export interface ModelInfo {
   model_name: string;
   data_mode?: 'synthetic_demo' | 'uploaded_csv';
   is_demo?: boolean;
+  generated_risk_labels?: boolean;
+  demo_labeled_copy?: boolean;
   demo_notice?: string;
   dataset_info?: {
     name: string;

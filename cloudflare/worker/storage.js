@@ -1,5 +1,5 @@
 import { isAuthorized, invalidRequest, unauthorized } from "./security.js";
-import { createCsvModelInfo } from "./csv-model.js";
+import { createCsvModelInfo, createDemoLabeledCsv } from "./csv-model.js";
 
 const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 const MAX_FILENAME_LENGTH = 120;
@@ -8,9 +8,90 @@ export async function handleStorageRequest(request, env) {
     const url = new URL(request.url);
     if (
         url.pathname !== "/internal/storage/objects" &&
-        url.pathname !== "/internal/storage/model-info"
+        url.pathname !== "/internal/storage/model-info" &&
+        url.pathname !== "/internal/storage/generate-demo-labels"
     ) return null;
     if (!isAuthorized(request, env)) return unauthorized();
+
+    if (url.pathname === "/internal/storage/generate-demo-labels") {
+        if (request.method !== "POST") {
+            return Response.json({ error: "Method not allowed" }, { status: 405 });
+        }
+        const key = url.searchParams.get("key");
+        if (
+            !key ||
+            key.length > 512 ||
+            !key.startsWith("imports/") ||
+            !key.toLowerCase().endsWith(".csv") ||
+            key.includes("\\") ||
+            key.split("/").some((part) => part === "..")
+        ) {
+            return invalidRequest("A valid R2 import key is required.");
+        }
+
+        try {
+            const source = await env.STORAGE.get(key);
+            if (!source) {
+                return Response.json(
+                    { success: false, error: "Không tìm thấy file CSV nguồn trong R2." },
+                    { status: 404 },
+                );
+            }
+            if (source.size > MAX_UPLOAD_BYTES) {
+                return Response.json(
+                    { success: false, error: "CSV vượt quá giới hạn 10 MB." },
+                    { status: 413 },
+                );
+            }
+
+            const labeledCsv = createDemoLabeledCsv(await source.text());
+            const body = new TextEncoder().encode(labeledCsv);
+            if (body.byteLength > MAX_UPLOAD_BYTES) {
+                return Response.json(
+                    { success: false, error: "CSV sau khi thêm nhãn vượt quá giới hạn 10 MB." },
+                    { status: 413 },
+                );
+            }
+            const sourceFilename = source.customMetadata?.filename || key.split("/").pop();
+            const filename = sourceFilename.replace(/\.csv$/i, "_demo_labeled.csv");
+            const labeledKey = `${key.slice(0, -4)}_demo_labeled.csv`;
+            const existing = await env.STORAGE.get(labeledKey);
+            if (!existing) {
+                const uploadedAt = new Date().toISOString();
+                await env.STORAGE.put(labeledKey, body, {
+                    httpMetadata: { contentType: "text/csv; charset=utf-8" },
+                    customMetadata: {
+                        filename,
+                        uploadedAt,
+                        generatedFrom: key,
+                        labelSource: "heuristic-demo-v1",
+                    },
+                });
+            }
+
+            return Response.json({
+                success: true,
+                r2_key: labeledKey,
+                filename,
+                size: existing?.size || body.byteLength,
+                already_exists: Boolean(existing),
+                generated_labels: true,
+                label_source: "heuristic-demo-v1",
+            }, { status: existing ? 200 : 201 });
+        } catch (error) {
+            if (Number.isInteger(error.status) && error.status >= 400 && error.status < 500) {
+                return Response.json(
+                    { success: false, error: error.message },
+                    { status: error.status },
+                );
+            }
+            console.error("R2 demo-label generation failed:", error.name || "Error");
+            return Response.json(
+                { success: false, error: "Không thể tạo bản CSV có nhãn demo trong R2." },
+                { status: 500 },
+            );
+        }
+    }
 
     if (url.pathname === "/internal/storage/model-info") {
         if (request.method !== "GET") {
@@ -45,6 +126,10 @@ export async function handleStorageRequest(request, env) {
             const modelInfo = createCsvModelInfo(
                 await object.text(),
                 object.customMetadata?.filename || key.split("/").pop(),
+                {
+                    generatedRiskLabels: object.customMetadata?.labelSource === "heuristic-demo-v1",
+                    demoLabeledCopy: object.customMetadata?.labelSource === "heuristic-demo-v1",
+                },
             );
             return Response.json(modelInfo, {
                 headers: { "Cache-Control": "no-store" },

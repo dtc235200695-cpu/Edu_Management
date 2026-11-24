@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { createCsvModelInfo } from "./csv-model.js";
+import { createCsvModelInfo, createDemoLabeledCsv } from "./csv-model.js";
 
 function makeCsv(reverseScores = false) {
     const header = [
@@ -55,6 +55,28 @@ function makeRiskOnlyCsv() {
     return [header.join(","), ...rows].join("\n");
 }
 
+function makeFeaturesOnlyCsv() {
+    const header = [
+        "student_id",
+        "attendance_rate",
+        "study_hours",
+        "assignment_score",
+        "quiz_score",
+        "completion_rate",
+        "previous_score",
+    ];
+    const rows = Array.from({ length: 10 }, (_, index) => [
+        `SV-${index + 1}`,
+        (0.5 + index * 0.04).toFixed(2),
+        String(3 + index * 2),
+        String(3 + index * 0.6),
+        String(3.2 + index * 0.55),
+        (0.45 + index * 0.05).toFixed(2),
+        String(3.5 + index * 0.5),
+    ].join(","));
+    return [header.join(","), ...rows].join("\n");
+}
+
 test("CSV model metrics are computed for the selected dataset and test split", () => {
     const metrics = createCsvModelInfo(makeCsv(), "scores-a.csv");
     const repeatedMetrics = createCsvModelInfo(makeCsv(), "scores-a.csv");
@@ -83,6 +105,34 @@ test("risk-only CSV returns classification metrics without fabricated regression
     assert.equal(metrics.dataset_info.record_count, 10);
     assert.deepEqual(metrics.actual_vs_predicted, []);
     assert.match(metrics.metrics_notice, /không có final_score/i);
+});
+
+test("unlabeled CSV receives clearly disclosed demo risk labels from its features", () => {
+    const metrics = createCsvModelInfo(makeFeaturesOnlyCsv(), "features-only.csv");
+
+    assert.equal(metrics.regression_metrics, null);
+    assert.equal(metrics.is_demo, true);
+    assert.equal(metrics.model_version, "csv-nb-demo-v1");
+    assert.equal(metrics.classification_metrics.confusion_matrix.length, 3);
+    assert.deepEqual(metrics.actual_vs_predicted, []);
+    assert.match(metrics.demo_notice, /ước tính bằng quy tắc demo/i);
+    assert.match(metrics.metrics_notice, /không có ground truth/i);
+});
+
+test("demo label generation creates a separate CSV column without changing source fields", () => {
+    const source = makeFeaturesOnlyCsv();
+    const labeled = createDemoLabeledCsv(source);
+    const [header, ...rows] = labeled.trim().split(/\r?\n/);
+    const metrics = createCsvModelInfo(labeled, "labeled.csv", {
+        generatedRiskLabels: true,
+        demoLabeledCopy: true,
+    });
+
+    assert.match(header, /,risk_level$/);
+    assert.equal(rows.length, 10);
+    assert.ok(rows.every((row) => /,(Cao|Trung bình|Thấp)$/.test(row)));
+    assert.equal(metrics.demo_labeled_copy, true);
+    assert.match(metrics.demo_notice, /không phải nhãn thực/i);
 });
 
 test("CSV model metrics change when the selected CSV's target values change", () => {

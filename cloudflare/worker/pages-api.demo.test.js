@@ -20,7 +20,13 @@ const demoSeedRecords = createDemoSeedRecords();
 
 async function requestAsAdmin(
     path,
-    { method = "GET", body, courseRecords = demoSeedRecords, storageCsv = null } = {},
+    {
+        method = "GET",
+        body,
+        courseRecords = demoSeedRecords,
+        storageCsv = null,
+        storagePuts = [],
+    } = {},
 ) {
     const record = { ...user };
     const env = {
@@ -64,6 +70,9 @@ async function requestAsAdmin(
                     text: async () => storageCsv,
                 }
                 : null,
+            put: async (key, value, options) => {
+                storagePuts.push({ key, value, options });
+            },
         },
     };
     const token = await issueSession(env, user);
@@ -240,7 +249,7 @@ test("authenticated staff can load metrics computed from a selected R2 CSV", asy
     assert.equal(response.status, 200);
     assert.equal(body.success, true);
     assert.equal(body.data_mode, "uploaded_csv");
-    assert.equal(body.is_demo, false);
+    assert.equal(body.is_demo, true);
     assert.equal(body.model_name, "EduInsight CSV Model - scores.csv");
     assert.equal(body.dataset_info.record_count, 5);
     assert.equal(body.classification_metrics.confusion_matrix.length, 3);
@@ -252,6 +261,32 @@ test("model-info requires a selected CSV key", async () => {
 
     assert.equal(response.status, 400);
     assert.ok(body.error);
+});
+
+test("staff can create a demo-labeled CSV copy in R2 without overwriting its source", async () => {
+    const storageCsv = [
+        "attendance_rate,study_hours,assignment_score,quiz_score,completion_rate,previous_score",
+        "0.5,4,4,4,0.5,4",
+        "0.6,6,5,5,0.6,5",
+        "0.7,8,6,6,0.7,6",
+        "0.8,10,7,7,0.8,7",
+        "0.9,12,8,8,0.9,8",
+    ].join("\n");
+    const storagePuts = [];
+    const response = await requestAsAdmin("/api/data/generate-demo-labels", {
+        method: "POST",
+        body: { key: "imports/2026/01/01/scores.csv" },
+        storageCsv,
+        storagePuts,
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 201);
+    assert.equal(body.success, true);
+    assert.match(body.r2_key, /scores_demo_labeled\.csv$/);
+    assert.equal(storagePuts.length, 1);
+    assert.match(new TextDecoder().decode(storagePuts[0].value), /,risk_level\r?\n/);
+    assert.equal(storagePuts[0].options.customMetadata.labelSource, "heuristic-demo-v1");
 });
 
 test("authenticated staff can load and update a labeled demo learning path", async () => {

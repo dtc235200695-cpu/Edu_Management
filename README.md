@@ -45,11 +45,13 @@ Gaussian Naive Bayes risk classifier and, when `final_score` is present, its
 Ridge regressor against a deterministic holdout. Model evaluation requires at
 least five rows and the numeric columns
 `attendance_rate`, `study_hours`, `assignment_score`, `quiz_score`,
-`completion_rate`, and `previous_score`, plus either `final_score` or
-`risk_level`. When `final_score` is absent, only classification metrics are
-shown; the app does not invent regression targets. At most 5,000 rows are
-evaluated. Only metrics are returned to the browser; the CSV remains private in
-R2.
+`completion_rate`, and `previous_score`. If a CSV has neither `final_score` nor
+`risk_level`, the Worker derives demo risk labels from those features for
+classification-only evaluation and clearly warns that they are not ground
+truth. The original R2 object is not modified. At most 5,000 rows are evaluated.
+Staff can explicitly save a separate `_demo_labeled.csv` copy to R2; the
+original stays unchanged. Only metrics are returned to the browser; CSV
+contents remain private.
 
 For another environment, set the same random `LEARNWISE_API_SECRET` in the
 local `.env` and as a Wrangler Worker secret. Configure D1 migrations and

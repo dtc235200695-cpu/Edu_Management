@@ -69,17 +69,6 @@ export const DataManagement: React.FC = () => {
           setPreviewError(`File CSV thiếu các cột bắt buộc: ${missing.join(', ')}`);
           return;
         }
-        const targetHeaders = [
-          'final_score', 'final_grade', 'final_exam_score', 'overall_score',
-          'total_score', 'course_score', 'score', 'risk_level', 'risk',
-          'risk_label', 'risk_category', 'risk_class', 'risk_group',
-          'risk_status', 'risk_100', 'risk_level_100', 'student_risk',
-        ];
-        if (!targetHeaders.some(h => headers.includes(h))) {
-          setPreviewError('File CSV cần có cột final_score hoặc risk_level để đánh giá mô hình.');
-          return;
-        }
-
         const rows: ImportRecord[] = [];
         for (let i = 1; i < lines.length; i++) {
           const values = lines[i].split(',').map(v => v.trim());
