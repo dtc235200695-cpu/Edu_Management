@@ -71,7 +71,10 @@ test("CSV model metrics are computed for the selected dataset and test split", (
 });
 
 test("risk-only CSV returns classification metrics without fabricated regression results", () => {
-    const metrics = createCsvModelInfo(makeRiskOnlyCsv(), "risk-only.csv");
+    const csv = makeRiskOnlyCsv()
+        .replace("attendance_rate", "Attendance Rate")
+        .replace("risk_level", "Risk Label");
+    const metrics = createCsvModelInfo(csv, "risk-only.csv");
 
     assert.equal(metrics.regression_metrics, null);
     assert.equal(metrics.algorithm_regression, null);

@@ -10,6 +10,27 @@ const RISK_CLASSES = ["Cao", "Trung bình", "Thấp"];
 const MAX_ROWS = 5000;
 const FEATURE_SCALES = [1, 40, 10, 10, 1, 10];
 const SEED = 42;
+const SCORE_COLUMNS = [
+    "final_score",
+    "final_grade",
+    "final_exam_score",
+    "overall_score",
+    "total_score",
+    "course_score",
+    "score",
+];
+const RISK_COLUMNS = [
+    "risk_level",
+    "risk",
+    "risk_label",
+    "risk_category",
+    "risk_class",
+    "risk_group",
+    "risk_status",
+    "risk_100",
+    "risk_level_100",
+    "student_risk",
+];
 
 function invalidCsv(message) {
     const error = new Error(message);
@@ -73,13 +94,22 @@ function parseCsv(text) {
     return rows;
 }
 
+function normalizeHeader(header) {
+    return header.trim()
+        .toLocaleLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "");
+}
+
 function validateRows(text) {
     const rows = parseCsv(text);
     if (rows.length < 2) {
         throw invalidCsv("CSV phải có tiêu đề và ít nhất một dòng dữ liệu.");
     }
 
-    const headers = rows[0].map((header) => header.trim());
+    const headers = rows[0].map(normalizeHeader);
     if (new Set(headers).size !== headers.length) {
         throw invalidCsv("CSV có tên cột bị lặp.");
     }
@@ -88,10 +118,14 @@ function validateRows(text) {
     if (missingColumns.length) {
         throw invalidCsv(`CSV thiếu cột bắt buộc: ${missingColumns.join(", ")}.`);
     }
-    const hasRegression = headers.includes("final_score");
-    const hasRiskLevel = headers.includes("risk_level");
+    const scoreColumn = SCORE_COLUMNS.find((column) => headers.includes(column));
+    const riskColumn = RISK_COLUMNS.find((column) => headers.includes(column));
+    const hasRegression = Boolean(scoreColumn);
+    const hasRiskLevel = Boolean(riskColumn);
     if (!hasRegression && !hasRiskLevel) {
-        throw invalidCsv("CSV cần có ít nhất một cột mục tiêu: final_score hoặc risk_level.");
+        throw invalidCsv(
+            `CSV cần có cột điểm (${SCORE_COLUMNS.slice(0, -1).join(", ")}) hoặc cột nhãn rủi ro (${RISK_COLUMNS.join(", ")}). Cột hiện có: ${headers.join(", ")}.`,
+        );
     }
     if (rows.length - 1 > MAX_ROWS) {
         throw invalidCsv(`Mỗi file chỉ hỗ trợ tối đa ${MAX_ROWS} dòng dữ liệu.`);
@@ -111,7 +145,7 @@ function validateRows(text) {
             }
             record[feature] = value;
         }
-        const rawScore = hasRegression ? values[indexes.final_score].trim() : "";
+        const rawScore = hasRegression ? values[indexes[scoreColumn]].trim() : "";
         const score = rawScore === "" ? null : Number(rawScore);
         if (hasRegression && (!Number.isFinite(score) || score < 0 || score > 10)) {
             throw invalidCsv(`Điểm final_score không hợp lệ ở dòng ${rowIndex + 2}.`);
@@ -126,7 +160,7 @@ function validateRows(text) {
         ) {
             throw invalidCsv(`Chỉ số ngoài phạm vi cho phép ở dòng ${rowIndex + 2}.`);
         }
-        const rawRisk = hasRiskLevel ? values[indexes.risk_level].trim() : "";
+        const rawRisk = hasRiskLevel ? values[indexes[riskColumn]].trim() : "";
         const providedRisk = normalizeRiskLevel(rawRisk);
         if (rawRisk && !providedRisk) {
             throw invalidCsv(`risk_level không hợp lệ ở dòng ${rowIndex + 2}.`);
@@ -154,7 +188,8 @@ function normalizeRiskLevel(value) {
         .replace(/\s+/g, " ")
         .trim();
     if (normalized.includes("cao") || normalized.includes("high")) return "Cao";
-    if (normalized.includes("thap") || normalized.includes("low") || normalized.includes("safe")) {
+    if (normalized.includes("thap") || normalized.includes("low") ||
+        normalized.includes("safe") || normalized.includes("an toan")) {
         return "Thấp";
     }
     if (normalized.includes("trung binh") || normalized.includes("medium") ||

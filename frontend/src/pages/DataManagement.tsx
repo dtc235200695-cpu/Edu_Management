@@ -59,7 +59,9 @@ export const DataManagement: React.FC = () => {
           return;
         }
 
-        const headers = lines[0].split(',').map(h => h.trim());
+        const headers = lines[0].replace(/^\uFEFF/, '').split(',').map(h =>
+          h.trim().toLocaleLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, ''),
+        );
         const expectedHeaders = ['student_id', 'attendance_rate', 'study_hours', 'assignment_score', 'quiz_score', 'completion_rate', 'previous_score'];
         const missing = expectedHeaders.filter(h => !headers.includes(h));
 
@@ -67,7 +69,13 @@ export const DataManagement: React.FC = () => {
           setPreviewError(`File CSV thiếu các cột bắt buộc: ${missing.join(', ')}`);
           return;
         }
-        if (!headers.includes('final_score') && !headers.includes('risk_level')) {
+        const targetHeaders = [
+          'final_score', 'final_grade', 'final_exam_score', 'overall_score',
+          'total_score', 'course_score', 'score', 'risk_level', 'risk',
+          'risk_label', 'risk_category', 'risk_class', 'risk_group',
+          'risk_status', 'risk_100', 'risk_level_100', 'student_risk',
+        ];
+        if (!targetHeaders.some(h => headers.includes(h))) {
           setPreviewError('File CSV cần có cột final_score hoặc risk_level để đánh giá mô hình.');
           return;
         }
