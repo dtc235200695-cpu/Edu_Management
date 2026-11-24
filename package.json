@@ -13,7 +13,8 @@
     "build": "npm run build --workspace frontend",
     "start": "npm run start --workspace backend",
     "pages:dev": "wrangler pages dev dist --cwd frontend",
-    "pages:deploy": "wrangler pages deploy dist --project-name eduinsight --cwd frontend"
+    "pages:deploy": "wrangler pages deploy dist --project-name eduinsight --branch main --commit-dirty=true --cwd frontend",
+    "deploy": "npm run build && npm run pages:deploy"
   },
   "dependencies": {
     "scrypt-js": "^3.0.1"

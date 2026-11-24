@@ -72,9 +72,15 @@ npx wrangler pages secret put GOOGLE_CLIENT_ID --project-name eduinsight
 npx wrangler pages secret put GOOGLE_CLIENT_SECRET --project-name eduinsight
 npx wrangler pages secret put SESSION_SECRET --project-name eduinsight
 npx wrangler pages secret put RESEND_API_KEY --project-name eduinsight
-npm run build
-npm run pages:deploy
+npm run deploy
 ```
+
+`npm run deploy` builds the frontend and publishes it together with the Pages
+Functions. Use this command after code changes to update the production site.
+The first setup still requires applying migrations and configuring secrets.
+For automatic deployments on pushes to `main`, add the Cloudflare API token as
+the GitHub repository Actions secret `CLOUDFLARE_API_TOKEN` (Cloudflare Pages
+Edit permission) and set the repository Actions variable `CLOUDFLARE_ACCOUNT_ID`.
 
 Set `MAIL_FROM` in the Pages production variables after its sender domain is
 verified with Resend. Update the Google OAuth client's authorized redirect URI
