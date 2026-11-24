@@ -159,10 +159,17 @@ function getRiskLevel(score, attendanceRate) {
             : "Thấp";
 }
 
-function allRecords(additionalStudents = []) {
-    return additionalStudents.length
-        ? [...DEMO_RECORDS, ...createAdditionalRecords(additionalStudents)]
-        : DEMO_RECORDS;
+function recordsFromSources(additionalStudents = [], storedRecords = []) {
+    const seedRecords = storedRecords.length ? storedRecords : DEMO_RECORDS;
+    const seededIds = new Set(seedRecords.map((record) => record.student_id));
+    const extraStudents = additionalStudents.filter(
+        (student) => !seededIds.has(student.student_id),
+    );
+    return [...seedRecords, ...createAdditionalRecords(extraStudents)];
+}
+
+export function createDemoSeedRecords() {
+    return DEMO_RECORDS.map((record) => ({ ...record }));
 }
 
 function average(records, field) {
@@ -177,8 +184,12 @@ function matchesClass(className, record) {
         record.class_name.split("-").includes(className);
 }
 
-function filteredRecords({ className, courseId } = {}, additionalStudents = []) {
-    return allRecords(additionalStudents).filter((record) =>
+function filteredRecords(
+    { className, courseId } = {},
+    additionalStudents = [],
+    storedRecords = [],
+) {
+    return recordsFromSources(additionalStudents, storedRecords).filter((record) =>
         matchesClass(className, record) &&
         (!courseId || record.course_id === courseId),
     );
@@ -214,8 +225,12 @@ function summarizeStudents(records) {
     });
 }
 
-export function createDemoDashboardOverview(filters = {}, additionalStudents = []) {
-    const records = filteredRecords(filters, additionalStudents);
+export function createDemoDashboardOverview(
+    filters = {},
+    additionalStudents = [],
+    storedRecords = [],
+) {
+    const records = filteredRecords(filters, additionalStudents, storedRecords);
     const students = summarizeStudents(records);
     const riskCounts = Object.fromEntries(RISK_LEVELS.map((level) => [level, 0]));
     const scoreDistribution = {
@@ -262,8 +277,8 @@ export function createDemoDashboardOverview(filters = {}, additionalStudents = [
     };
 }
 
-export function createDemoAnalytics(additionalStudents = []) {
-    const records = allRecords(additionalStudents);
+export function createDemoAnalytics(additionalStudents = [], storedRecords = []) {
+    const records = recordsFromSources(additionalStudents, storedRecords);
     const topicDefinitions = [
         { topic_name: "Chuyên cần", field: "attendance_rate", scale: 10 },
         { topic_name: "Bài tập", field: "assignment_score", scale: 1 },
@@ -304,8 +319,8 @@ export function createDemoAnalytics(additionalStudents = []) {
     };
 }
 
-export function createDemoStudentList(additionalStudents = []) {
-    const records = allRecords(additionalStudents);
+export function createDemoStudentList(additionalStudents = [], storedRecords = []) {
+    const records = recordsFromSources(additionalStudents, storedRecords);
     const summaries = summarizeStudents(records);
     return summaries.map((summary) => {
         const studentRecords = records.filter(
@@ -322,13 +337,17 @@ export function createDemoStudentList(additionalStudents = []) {
     });
 }
 
-export function createDemoStudentDetails(studentId, additionalStudents = []) {
-    const records = allRecords(additionalStudents).filter(
+export function createDemoStudentDetails(
+    studentId,
+    additionalStudents = [],
+    storedRecords = [],
+) {
+    const records = recordsFromSources(additionalStudents, storedRecords).filter(
         (record) => record.student_id === studentId,
     );
     if (records.length === 0) return null;
 
-    const student = createDemoStudentList(additionalStudents).find(
+    const student = createDemoStudentList(additionalStudents, storedRecords).find(
         (item) => item.student_id === studentId,
     );
     return {
@@ -358,7 +377,12 @@ export function demoStudentIdForPathId(pathId) {
     return `DEMO-${String(studentNumber).padStart(4, "0")}`;
 }
 
-export function createDemoLearningPath(studentId, additionalStudents = [], savedStatuses = []) {
+export function createDemoLearningPath(
+    studentId,
+    additionalStudents = [],
+    savedStatuses = [],
+    storedRecords = [],
+) {
     const match = /^DEMO-(\d{4,})$/.exec(studentId);
     if (!match) return null;
     const studentNumber = Number(match[1]);
@@ -369,7 +393,7 @@ export function createDemoLearningPath(studentId, additionalStudents = [], saved
         studentId !== `DEMO-${String(studentNumber).padStart(4, "0")}`
     ) return null;
 
-    const records = allRecords(additionalStudents).filter(
+    const records = recordsFromSources(additionalStudents, storedRecords).filter(
         (record) => record.student_id === studentId,
     );
     if (records.length !== LEARNING_PATH_TOPICS.length) return null;

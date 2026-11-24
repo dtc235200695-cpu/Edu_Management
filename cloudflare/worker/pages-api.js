@@ -151,6 +151,38 @@ async function getDemoStudents(env) {
     return result.results || [];
 }
 
+async function getDemoRecords(env) {
+    let result;
+    try {
+        result = await env.DB.prepare(`
+            SELECT student_id, full_name, class_name, course_id, course_name,
+                   attendance_rate, study_hours, assignment_score, quiz_score,
+                   completion_rate, previous_score, final_score, predicted_score,
+                   risk_level, is_seed_data, created_at
+            FROM demo_course_records
+            ORDER BY student_id, course_id
+        `).all();
+    } catch (error) {
+        if (error.message?.includes("demo_course_records")) {
+            const migrationError = new Error(
+                "D1 chưa có dữ liệu điểm DEMO. Hãy áp dụng migration 0006_seed_demo_scores_and_learning_paths.sql.",
+            );
+            migrationError.status = 503;
+            throw migrationError;
+        }
+        throw error;
+    }
+    const records = result.results || [];
+    if (records.length < 240) {
+        const error = new Error(
+            "D1 chưa có đủ dữ liệu điểm DEMO. Hãy áp dụng migration 0006_seed_demo_scores_and_learning_paths.sql.",
+        );
+        error.status = 503;
+        throw error;
+    }
+    return records;
+}
+
 function filterDemoStudents(students, url) {
     const search = (url.searchParams.get("search") || "").trim().toLocaleLowerCase("vi");
     const cohort = url.searchParams.get("cohort") || "";
@@ -814,21 +846,33 @@ async function handleRequest(context) {
     }
     if (method === "GET" && path === "/api/dashboard/overview") {
         await requireRole(request, env, ["student", "lecturer", "admin"]);
-        const demoStudents = await getDemoStudents(env);
+        const [demoStudents, demoRecords] = await Promise.all([
+            getDemoStudents(env),
+            getDemoRecords(env),
+        ]);
         return json(createDemoDashboardOverview({
             className: url.searchParams.get("class_name") || undefined,
             courseId: url.searchParams.get("course_id") || undefined,
-        }, demoStudents), 200, { "Cache-Control": "no-store" });
+        }, demoStudents, demoRecords), 200, { "Cache-Control": "no-store" });
     }
     if (method === "GET" && path === "/api/analytics") {
         await requireRole(request, env, ["student", "lecturer", "admin"]);
-        const demoStudents = await getDemoStudents(env);
-        return json(createDemoAnalytics(demoStudents), 200, { "Cache-Control": "no-store" });
+        const [demoStudents, demoRecords] = await Promise.all([
+            getDemoStudents(env),
+            getDemoRecords(env),
+        ]);
+        return json(createDemoAnalytics(demoStudents, demoRecords), 200, { "Cache-Control": "no-store" });
     }
     if (path === "/api/students" && method === "GET") {
         await requireRole(request, env, ["admin", "lecturer"]);
-        const demoStudents = await getDemoStudents(env);
-        const students = filterDemoStudents(createDemoStudentList(demoStudents), url);
+        const [demoStudents, demoRecords] = await Promise.all([
+            getDemoStudents(env),
+            getDemoRecords(env),
+        ]);
+        const students = filterDemoStudents(
+            createDemoStudentList(demoStudents, demoRecords),
+            url,
+        );
         if (!students) {
             return json({
                 success: false,
@@ -856,6 +900,18 @@ async function handleRequest(context) {
                 success: false,
                 error: "Chỉ chấp nhận mã DEMO-*, tên “Sinh viên DEMO 061” và các chỉ số hợp lệ.",
             }, 400);
+        }
+        const seededStudent = await env.DB.prepare(`
+            SELECT 1 AS seeded
+            FROM demo_course_records
+            WHERE student_id = ?
+            LIMIT 1
+        `).bind(student.student_id).first();
+        if (seededStudent) {
+            return json({
+                success: false,
+                error: "Mã sinh viên DEMO này đã tồn tại.",
+            }, 409);
         }
         const result = await env.DB.prepare(`
             INSERT INTO demo_students (
@@ -886,8 +942,11 @@ async function handleRequest(context) {
     if (studentRoute && method === "GET") {
         await requireRole(request, env, ["admin", "lecturer"]);
         const studentId = decodeURIComponent(studentRoute[1]);
-        const demoStudents = await getDemoStudents(env);
-        const details = createDemoStudentDetails(studentId, demoStudents);
+        const [demoStudents, demoRecords] = await Promise.all([
+            getDemoStudents(env),
+            getDemoRecords(env),
+        ]);
+        const details = createDemoStudentDetails(studentId, demoStudents, demoRecords);
         return details
             ? json(details, 200, { "Cache-Control": "no-store" })
             : json({ success: false, error: "Không tìm thấy sinh viên DEMO." }, 404);

@@ -2,12 +2,21 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import worker from "./index.js";
 import { handleLearningPathRequest } from "./learning-paths.js";
+import { createDemoLearningPath, createDemoSeedRecords } from "./demo-data.js";
 
 function createEnv() {
     const statuses = new Map();
     const demoStudents = [];
+    const seedRecords = createDemoSeedRecords();
+    const storedPaths = createDemoLearningPath(
+        "DEMO-0001",
+        [],
+        [],
+        seedRecords,
+    ).learning_path;
     return {
         statuses,
+        storedPaths,
         LEARNWISE_API_SECRET: "learning-path-test-secret",
         DB: {
             prepare(query) {
@@ -18,8 +27,30 @@ function createEnv() {
                         return this;
                     },
                     async all() {
+                        if (query.includes("FROM demo_learning_paths AS paths")) {
+                            return {
+                                results: storedPaths
+                                    .filter((path) => path.student_id === values[0])
+                                    .map((path) => ({
+                                        ...path,
+                                        status: statuses.get(`${path.student_id}:${path.path_id}`)
+                                            ?.status || "Chưa hoàn thành",
+                                    })),
+                            };
+                        }
                         if (query.includes("FROM demo_students")) {
-                            return { results: demoStudents };
+                            return {
+                                results: demoStudents.filter(
+                                    (student) => student.student_id === values[0],
+                                ),
+                            };
+                        }
+                        if (query.includes("FROM demo_course_records")) {
+                            return {
+                                results: seedRecords.filter(
+                                    (record) => record.student_id === values[0],
+                                ),
+                            };
                         }
                         if (query.includes("FROM demo_learning_path_status")) {
                             return {
@@ -85,6 +116,21 @@ test("demo learning-path status persists and is returned on reload", async () =>
     assert.equal(body.learning_path[0].status, "Đã hoàn thành");
 });
 
+test("Worker serves seeded learning-path content from D1", async () => {
+    const env = createEnv();
+    env.storedPaths[0].topic_name = "Chủ đề đã lưu trong D1";
+    env.storedPaths[0].current_score = 9.9;
+    const response = await handleLearningPathRequest(
+        internalRequest("/internal/learning-path/students/DEMO-0001"),
+        env,
+    );
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.learning_path[0].topic_name, "Chủ đề đã lưu trong D1");
+    assert.equal(body.learning_path[0].current_score, 9.9);
+});
+
 test("Worker routes authorized demo learning-path requests", async () => {
     const env = createEnv();
     const response = await worker.fetch(
@@ -119,6 +165,9 @@ test("demo learning-path endpoint rejects invalid and missing paths", async () =
 test("demo learning-path endpoint reports an unapplied D1 migration", async () => {
     const env = createEnv();
     env.DB.prepare = () => ({
+        bind() {
+            return this;
+        },
         async all() {
             throw new Error("no such table: demo_learning_path_status");
         },
@@ -131,4 +180,24 @@ test("demo learning-path endpoint reports an unapplied D1 migration", async () =
 
     assert.equal(response.status, 503);
     assert.match(body.error, /0005_create_demo_learning_path_status\.sql/);
+});
+
+test("demo learning-path endpoint reports when seeded data tables are missing", async () => {
+    const env = createEnv();
+    env.DB.prepare = () => ({
+        bind() {
+            return this;
+        },
+        async all() {
+            throw new Error("no such table: demo_learning_paths");
+        },
+    });
+    const response = await handleLearningPathRequest(
+        internalRequest("/internal/learning-path/students/DEMO-0001"),
+        env,
+    );
+    const body = await response.json();
+
+    assert.equal(response.status, 503);
+    assert.match(body.error, /0006_seed_demo_scores_and_learning_paths\.sql/);
 });

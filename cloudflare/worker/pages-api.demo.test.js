@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { handlePublicApiRequest } from "./pages-api.js";
 import { issueSession } from "./session.js";
+import { createDemoSeedRecords } from "./demo-data.js";
 
 const user = {
     id: "demo-test-admin",
@@ -15,8 +16,12 @@ const user = {
     auth_version: 1,
     must_change_password: 0,
 };
+const demoSeedRecords = createDemoSeedRecords();
 
-async function requestAsAdmin(path, { method = "GET", body } = {}) {
+async function requestAsAdmin(
+    path,
+    { method = "GET", body, courseRecords = demoSeedRecords } = {},
+) {
     const record = { ...user };
     const env = {
         SESSION_SECRET: "demo-test-session-secret-with-more-than-32-bytes",
@@ -24,8 +29,16 @@ async function requestAsAdmin(path, { method = "GET", body } = {}) {
             prepare(sql) {
                 let values = [];
                 const statement = {
-                    first: async () => ({ ...record }),
-                    all: async () => ({ results: [] }),
+                    first: async () => (
+                        sql.includes("FROM demo_course_records")
+                            ? null
+                            : { ...record }
+                    ),
+                    all: async () => ({
+                        results: sql.includes("FROM demo_course_records")
+                            ? courseRecords
+                            : [],
+                    }),
                     run: async () => {
                         if (sql.includes("SET name = ?, updated_at = CURRENT_TIMESTAMP")) {
                             const [name, id] = values;
@@ -110,6 +123,18 @@ test("authenticated student list is paginated and labeled as synthetic", async (
     assert.equal(body.pagination.total, 60);
     assert.equal(body.students.length, 12);
     assert.ok(body.students.every((student) => student.full_name.includes("DEMO")));
+});
+
+test("student details are read from persisted D1 course records", async () => {
+    const courseRecords = demoSeedRecords.map((record) => ({ ...record }));
+    courseRecords[0].full_name = "Sinh viên DEMO lưu trong D1";
+    const response = await requestAsAdmin("/api/students/DEMO-0001", {
+        courseRecords,
+    });
+    const body = await response.json();
+
+    assert.equal(response.status, 200);
+    assert.equal(body.student.full_name, "Sinh viên DEMO lưu trong D1");
 });
 
 test("authenticated student creation accepts only demo IDs and persists the record", async () => {

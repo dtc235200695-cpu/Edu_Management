@@ -4,6 +4,7 @@ import {
     createDemoAnalytics,
     createDemoDashboardOverview,
     createDemoLearningPath,
+    createDemoSeedRecords,
     createDemoStudentDetails,
     createDemoStudentList,
     demoStudentIdForPathId,
@@ -44,6 +45,20 @@ test("demo analytics exposes only generated demo records", () => {
     assert.equal(analytics.study_hours_correlation.length, 240);
     assert.equal(analytics.attendance_correlation.length, 240);
     assert.equal(analytics.course_scores.length, 4);
+});
+
+test("demo views use persisted course records when they are supplied", () => {
+    const storedRecords = createDemoSeedRecords();
+    storedRecords[0].full_name = "Sinh viên DEMO đã lưu trong D1";
+    storedRecords[0].final_score = 9.9;
+
+    const students = createDemoStudentList([], storedRecords);
+    const path = createDemoLearningPath("DEMO-0001", [], [], storedRecords);
+
+    assert.equal(storedRecords.length, 240);
+    assert.equal(students.length, 60);
+    assert.equal(students[0].full_name, "Sinh viên DEMO đã lưu trong D1");
+    assert.equal(path.learning_path[0].current_score, 9.9);
 });
 
 test("demo list and dashboard include persistent demo student entries", () => {

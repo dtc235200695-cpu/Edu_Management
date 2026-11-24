@@ -95,14 +95,17 @@ Do not put any of the secret values in source control or chat.
 
 The Pages dashboard, analytics, and student list use deterministic synthetic
 demo records and display a DEMO warning; they are not real learner data and
-must not be used for student assessment. Demo student records can only be
-created with `DEMO-*` IDs and generated demo names; they are stored separately
-in the D1 `demo_students` table. The ML Model page reads the synthetic
+must not be used for student assessment. The 60 seeded demo students have
+four synthetic course records each, with 240 associated learning-path rows,
+stored in D1 by migration `0006_seed_demo_scores_and_learning_paths.sql`.
+Additional demo students can only be created with `DEMO-*` IDs and generated
+demo names; they are stored separately in the D1 `demo_students` table. The
+ML Model page reads the synthetic
 `ml/model_metrics.json` artifact and labels it as demo data. The prediction
 endpoint returns a labeled heuristic estimate, not the trained ML model.
-Learning paths for `DEMO-*` students are generated from synthetic course
-scores, labeled as demo data, and their completion statuses are stored in the
-D1 `demo_learning_path_status` table. Real student IDs still receive an
+Learning-path completion statuses are stored in the D1
+`demo_learning_path_status` table, created by migration
+`0005_create_demo_learning_path_status.sql`. Real student IDs still receive an
 unavailable response until an authorized dataset with validated topic results
 has been integrated. Never present demo metrics, estimates, or paths as real
 learner data.
