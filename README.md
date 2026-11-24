@@ -87,10 +87,11 @@ verified with Resend. Update the Google OAuth client's authorized redirect URI
 to `https://eduinsight.pages.dev/auth/google/callback` before enabling sign-in.
 Do not put any of the secret values in source control or chat.
 
-The dashboard, analytics, prediction, and learning-path API routes intentionally
-remain unavailable until an authorized learning dataset has been supplied and
-validated. Do not deploy this as a complete production release or present demo
-metrics as real learner data before that work is complete.
+The Pages dashboard and analytics currently use deterministic synthetic demo
+records and display a DEMO warning; they are not real learner data and must not
+be used for student assessment. Prediction, student-management, and learning-
+path APIs remain unavailable until an authorized dataset has been integrated
+and validated. Do not present demo metrics as real learner data.
 
 ## Generate the ML demo artifacts
 

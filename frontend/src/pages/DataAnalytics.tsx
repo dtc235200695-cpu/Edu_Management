@@ -44,7 +44,7 @@ export const DataAnalytics: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-3">
         <RefreshCw className="w-8 h-8 text-blue-600 animate-spin" />
-        <p className="text-sm font-medium text-slate-500">Đang tổng hợp dữ liệu học tập từ D1...</p>
+        <p className="text-sm font-medium text-slate-500">Đang tổng hợp dữ liệu phân tích...</p>
       </div>
     );
   }
@@ -73,6 +73,16 @@ export const DataAnalytics: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {data?.data_mode === 'synthetic_demo' && (
+        <div
+          role="note"
+          className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"
+        >
+          <strong className="font-bold">DEMO — Dữ liệu giả lập.</strong>
+          {' '}Các số liệu được tạo tự động để minh họa, không phải hồ sơ hoặc kết quả học tập thật và không dùng để đánh giá sinh viên.
+        </div>
+      )}
+
       {/* Top Selector Tabs */}
       <div className="bg-white p-3 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
         <div className="flex space-x-2">

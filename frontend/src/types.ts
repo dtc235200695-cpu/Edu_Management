@@ -66,6 +66,7 @@ export interface StudentListResponse {
 }
 
 export interface DashboardOverview {
+  data_mode?: 'synthetic_demo';
   total_students: number;
   total_courses: number;
   average_score: number;
@@ -113,6 +114,7 @@ export interface CourseScore {
 
 export interface AnalyticsResponse {
   success: boolean;
+  data_mode?: 'synthetic_demo';
   study_hours_correlation: AnalyticsPoint[];
   attendance_correlation: AnalyticsPoint[];
   topic_performance: TopicPerformance[];

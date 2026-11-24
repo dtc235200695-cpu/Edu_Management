@@ -2,6 +2,10 @@ import { handleStorageRequest } from "./storage.js";
 import { handleUserRequest } from "./users.js";
 import { hashPassword, verifyPassword } from "./password-crypto.js";
 import {
+    createDemoAnalytics,
+    createDemoDashboardOverview,
+} from "./demo-data.js";
+import {
     appendSessionCookie,
     cookieNames,
     getSession,
@@ -629,6 +633,17 @@ async function handleRequest(context) {
             response.status,
         );
     }
+    if (method === "GET" && path === "/api/dashboard/overview") {
+        await requireRole(request, env, ["student", "lecturer", "admin"]);
+        return json(createDemoDashboardOverview({
+            className: url.searchParams.get("class_name") || undefined,
+            courseId: url.searchParams.get("course_id") || undefined,
+        }), 200, { "Cache-Control": "no-store" });
+    }
+    if (method === "GET" && path === "/api/analytics") {
+        await requireRole(request, env, ["student", "lecturer", "admin"]);
+        return json(createDemoAnalytics(), 200, { "Cache-Control": "no-store" });
+    }
     if (method === "GET" && path === "/api/data/import-history") {
         await requireRole(request, env, ["admin", "lecturer"]);
         const response = await invokeStorage(
@@ -653,8 +668,6 @@ async function handleRequest(context) {
         }, 200, { "Cache-Control": "no-store" });
     }
     if (
-        path === "/api/dashboard/overview" ||
-        path === "/api/analytics" ||
         path === "/api/predict" ||
         path === "/api/ml/model-info" ||
         path.startsWith("/api/students") ||

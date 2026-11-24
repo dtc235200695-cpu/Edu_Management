@@ -70,7 +70,7 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-3">
         <RefreshCw className="w-8 h-8 text-blue-600 animate-spin" />
-        <p className="text-sm font-medium text-slate-500">Đang tải số liệu từ Cloudflare D1...</p>
+        <p className="text-sm font-medium text-slate-500">Đang tải số liệu Dashboard...</p>
       </div>
     );
   }
@@ -116,6 +116,16 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
 
   return (
     <div className="space-y-6">
+      {data?.data_mode === 'synthetic_demo' && (
+        <div
+          role="note"
+          className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950"
+        >
+          <strong className="font-bold">DEMO — Dữ liệu giả lập.</strong>
+          {' '}Các số liệu được tạo tự động để minh họa, không phải hồ sơ hoặc kết quả học tập thật và không dùng để đánh giá sinh viên.
+        </div>
+      )}
+
       {/* Filter Bar */}
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center space-x-2 text-sm font-semibold text-slate-700">
@@ -234,7 +244,9 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         {/* Card 5: Sinh viên có nguy cơ */}
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-slate-500 uppercase">Nguy cơ học tập</span>
+            <span className="text-xs font-semibold text-slate-500 uppercase">
+              {data?.data_mode === 'synthetic_demo' ? 'Nguy cơ học tập (DEMO)' : 'Nguy cơ học tập'}
+            </span>
             <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center">
               <AlertTriangle className="w-4 h-4" />
             </div>
@@ -273,7 +285,11 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         {/* Biểu đồ tỷ lệ rủi ro */}
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs flex flex-col">
           <h3 className="text-base font-bold text-slate-800 mb-1">Mức độ rủi ro học tập</h3>
-          <p className="text-xs text-slate-500 mb-4">Phân loại bởi mô hình Machine Learning</p>
+          <p className="text-xs text-slate-500 mb-4">
+            {data?.data_mode === 'synthetic_demo'
+              ? 'Phân loại minh họa từ dữ liệu giả lập.'
+              : 'Phân loại bởi mô hình Machine Learning'}
+          </p>
           <div className="h-56 flex-1">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -305,8 +321,16 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
       <div className="bg-white rounded-xl border border-slate-200 shadow-2xs overflow-hidden">
         <div className="p-5 border-b border-slate-100 flex items-center justify-between">
           <div>
-            <h3 className="text-base font-bold text-slate-800">Danh sách sinh viên cần hỗ trợ can thiệp</h3>
-            <p className="text-xs text-slate-500">Các sinh viên có điểm dự đoán dưới 6.0 hoặc xếp loại Nguy cơ cao</p>
+            <h3 className="text-base font-bold text-slate-800">
+              {data?.data_mode === 'synthetic_demo'
+                ? 'Danh sách sinh viên DEMO cần hỗ trợ giả lập'
+                : 'Danh sách sinh viên cần hỗ trợ can thiệp'}
+            </h3>
+            <p className="text-xs text-slate-500">
+              {data?.data_mode === 'synthetic_demo'
+                ? 'Các trường hợp minh họa được tạo tự động, không tương ứng với sinh viên thật.'
+                : 'Các sinh viên có điểm dự đoán dưới 6.0 hoặc xếp loại Nguy cơ cao'}
+            </p>
           </div>
           <span className="px-2.5 py-1 bg-red-50 text-red-700 text-xs font-semibold rounded-full border border-red-100">
             {data?.students_needing_support.length || 0} trường hợp
@@ -361,18 +385,24 @@ export const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                       </span>
                     </td>
                     <td className="px-5 py-3.5 text-right space-x-2">
-                      <button
-                        onClick={() => onNavigateToStudent(student.student_id)}
-                        className="text-xs text-blue-600 hover:text-blue-800 font-semibold"
-                      >
-                        Hồ sơ
-                      </button>
-                      <button
-                        onClick={() => onNavigateToPath(student.student_id)}
-                        className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded hover:bg-blue-100 font-semibold transition-colors"
-                      >
-                        Lộ trình
-                      </button>
+                      {data?.data_mode === 'synthetic_demo' ? (
+                        <span className="text-xs text-slate-400">Chỉ minh họa</span>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => onNavigateToStudent(student.student_id)}
+                            className="text-xs text-blue-600 hover:text-blue-800 font-semibold"
+                          >
+                            Hồ sơ
+                          </button>
+                          <button
+                            onClick={() => onNavigateToPath(student.student_id)}
+                            className="text-xs px-2 py-1 bg-blue-50 text-blue-700 rounded hover:bg-blue-100 font-semibold transition-colors"
+                          >
+                            Lộ trình
+                          </button>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))
