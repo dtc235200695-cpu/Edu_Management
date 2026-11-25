@@ -934,3 +934,7 @@ INSERT OR IGNORE INTO learning_paths (student_id, course_id, topic_name, priorit
 -- 4. Dữ liệu Lịch sử Import mẫu
 INSERT OR IGNORE INTO import_history (filename, total_records, valid_records, invalid_records, r2_key) VALUES ('k19_cntt_hk1_scores.csv', 60, 60, 0, 'raw/imports/2026/11/k19_cntt_hk1_scores.csv');
 INSERT OR IGNORE INTO import_history (filename, total_records, valid_records, invalid_records, r2_key) VALUES ('student_performance_batch_02.csv', 45, 43, 2, 'raw/imports/2026/11/student_performance_batch_02.csv');
+
+-- 5. Cập nhật tài khoản demo sinh viên SV2026
+INSERT OR IGNORE INTO students (student_id, full_name, class_name) VALUES ('SV2026', 'Nguyễn Văn A', 'K22-CNTT01');
+UPDATE students SET full_name = 'Nguyễn Văn A', class_name = 'K22-CNTT01' WHERE student_id = 'SV2026';

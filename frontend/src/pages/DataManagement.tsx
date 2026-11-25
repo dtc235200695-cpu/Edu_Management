@@ -26,6 +26,7 @@ export const DataManagement: React.FC<DataManagementProps> = ({ onNavigateToStud
   const [importResult, setImportResult] = useState<any | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(true);
+  const [importError, setImportError] = useState<string | null>(null);
 
   useEffect(() => {
     loadHistory();
@@ -113,6 +114,7 @@ SV2026_505,Vũ Thị Hà,K19-KTPM01,0.90,15.0,8.0,8.5,0.88,8.0,8.2`;
   const handleExecuteImport = async () => {
     if (parsedRows.length === 0) return;
     setImporting(true);
+    setImportError(null);
     try {
       const res = await importData(parsedRows, file?.name || 'import.csv');
       if (res.success) {
@@ -121,10 +123,10 @@ SV2026_505,Vũ Thị Hà,K19-KTPM01,0.90,15.0,8.0,8.5,0.88,8.0,8.2`;
         setFile(null);
         loadHistory();
       } else {
-        alert(res.error || 'Lỗi khi nhập dữ liệu');
+        setImportError(res.error || 'Lỗi khi nhập dữ liệu');
       }
     } catch (err: any) {
-      alert(err.message || 'Lỗi kết nối');
+      setImportError(err.message || 'Không thể kết nối tới Cloudflare Workers API. Vui lòng kiểm tra kết nối mạng.');
     } finally {
       setImporting(false);
     }
@@ -228,6 +230,17 @@ SV2026_505,Vũ Thị Hà,K19-KTPM01,0.90,15.0,8.0,8.5,0.88,8.0,8.2`;
               )}
             </button>
           </div>
+
+          {importError && (
+            <div className="flex items-start space-x-2 p-3 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">Lỗi kết nối API</p>
+                <p className="mt-0.5 text-red-600">{importError}</p>
+                <p className="mt-1 text-red-500">Hệ thống đang chạy trên Cloudflare Workers. Vui lòng truy cập qua URL production hoặc chạy <code className="bg-red-100 px-1 rounded">wrangler dev</code> để test local.</p>
+              </div>
+            </div>
+          )}
 
           <div className="overflow-x-auto max-h-64 overflow-y-auto border border-slate-100 rounded-lg">
             <table className="w-full text-left text-xs text-slate-600">
