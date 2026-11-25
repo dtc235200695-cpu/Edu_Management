@@ -46,3 +46,19 @@ scratch*.js
 scratch*.cjs
 DTDM/
 Edu_Management/
+
+# Old/unused directories
+backend/
+cloudflare/
+data/
+storage/
+tests/
+
+# Misc unnecessary files
+extracted_report.txt
+dev_server.js
+package-lock.json
+
+# ML binary artifacts (large files, regeneratable)
+ml/*.joblib
+ml/__pycache__/
