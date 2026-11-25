@@ -1,0 +1,537 @@
+const FEATURES = [
+    "attendance_rate",
+    "study_hours",
+    "assignment_score",
+    "quiz_score",
+    "completion_rate",
+    "previous_score",
+];
+const RISK_CLASSES = ["Cao", "Trung bình", "Thấp"];
+const MAX_ROWS = 5000;
+const FEATURE_SCALES = [1, 40, 10, 10, 1, 10];
+const SEED = 42;
+const SCORE_COLUMNS = [
+    "final_score",
+    "final_grade",
+    "final_exam_score",
+    "overall_score",
+    "total_score",
+    "course_score",
+    "score",
+];
+const RISK_COLUMNS = [
+    "risk_level",
+    "risk",
+    "risk_label",
+    "risk_category",
+    "risk_class",
+    "risk_group",
+    "risk_status",
+    "risk_100",
+    "risk_level_100",
+    "student_risk",
+];
+
+function invalidCsv(message) {
+    const error = new Error(message);
+    error.status = 400;
+    return error;
+}
+
+function parseCsv(text) {
+    const rows = [];
+    let row = [];
+    let field = "";
+    let quoted = false;
+    let closedQuote = false;
+    const source = text.charCodeAt(0) === 0xfeff ? text.slice(1) : text;
+
+    for (let index = 0; index < source.length; index += 1) {
+        const character = source[index];
+        if (quoted) {
+            if (character === '"') {
+                if (source[index + 1] === '"') {
+                    field += '"';
+                    index += 1;
+                } else {
+                    quoted = false;
+                    closedQuote = true;
+                }
+            } else {
+                field += character;
+            }
+            continue;
+        }
+
+        if (closedQuote && character !== "," && character !== "\r" &&
+            character !== "\n" && !/\s/.test(character)) {
+            throw invalidCsv("CSV có ký tự không hợp lệ sau dấu ngoặc kép.");
+        }
+        if (character === '"') {
+            if (field.length > 0) {
+                throw invalidCsv("CSV có dấu ngoặc kép không hợp lệ.");
+            }
+            quoted = true;
+        } else if (character === ",") {
+            row.push(field);
+            field = "";
+            closedQuote = false;
+        } else if (character === "\n" || character === "\r") {
+            if (character === "\r" && source[index + 1] === "\n") index += 1;
+            row.push(field);
+            if (row.some((value) => value.trim() !== "")) rows.push(row);
+            row = [];
+            field = "";
+            closedQuote = false;
+        } else {
+            field += character;
+        }
+    }
+
+    if (quoted) throw invalidCsv("CSV chưa đóng dấu ngoặc kép.");
+    row.push(field);
+    if (row.some((value) => value.trim() !== "")) rows.push(row);
+    return rows;
+}
+
+function normalizeHeader(header) {
+    return header.trim()
+        .toLocaleLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "");
+}
+
+function validateRows(text) {
+    const rows = parseCsv(text);
+    if (rows.length < 2) {
+        throw invalidCsv("CSV phải có tiêu đề và ít nhất một dòng dữ liệu.");
+    }
+
+    const headers = rows[0].map(normalizeHeader);
+    if (new Set(headers).size !== headers.length) {
+        throw invalidCsv("CSV có tên cột bị lặp.");
+    }
+    const requiredColumns = FEATURES;
+    const missingColumns = requiredColumns.filter((column) => !headers.includes(column));
+    if (missingColumns.length) {
+        throw invalidCsv(`CSV thiếu cột bắt buộc: ${missingColumns.join(", ")}.`);
+    }
+    const scoreColumn = SCORE_COLUMNS.find((column) => headers.includes(column));
+    const riskColumn = RISK_COLUMNS.find((column) => headers.includes(column));
+    const hasRegression = Boolean(scoreColumn);
+    const hasRiskLevel = Boolean(riskColumn);
+    if (rows.length - 1 > MAX_ROWS) {
+        throw invalidCsv(`Mỗi file chỉ hỗ trợ tối đa ${MAX_ROWS} dòng dữ liệu.`);
+    }
+
+    const indexes = Object.fromEntries(headers.map((header, index) => [header, index]));
+    let generatedRiskLabels = !hasRiskLevel;
+    const data = rows.slice(1).map((values, rowIndex) => {
+        if (values.length !== headers.length) {
+            throw invalidCsv(`Số cột không hợp lệ ở dòng ${rowIndex + 2}.`);
+        }
+        const record = {};
+        for (const feature of FEATURES) {
+            const rawValue = values[indexes[feature]].trim();
+            const value = rawValue === "" ? Number.NaN : Number(rawValue);
+            if (!Number.isFinite(value)) {
+                throw invalidCsv(`Giá trị ${feature} không hợp lệ ở dòng ${rowIndex + 2}.`);
+            }
+            record[feature] = value;
+        }
+        const rawScore = hasRegression ? values[indexes[scoreColumn]].trim() : "";
+        const score = rawScore === "" ? null : Number(rawScore);
+        if (hasRegression && (!Number.isFinite(score) || score < 0 || score > 10)) {
+            throw invalidCsv(`Điểm final_score không hợp lệ ở dòng ${rowIndex + 2}.`);
+        }
+        if (FEATURES.some((feature) => record[feature] < 0)) {
+            throw invalidCsv(`Chỉ số ${FEATURES.find((feature) => record[feature] < 0)} âm ở dòng ${rowIndex + 2}.`);
+        }
+        const rawRisk = hasRiskLevel ? values[indexes[riskColumn]].trim() : "";
+        const providedRisk = normalizeRiskLevel(rawRisk);
+        if (rawRisk && !providedRisk) {
+            throw invalidCsv(`risk_level không hợp lệ ở dòng ${rowIndex + 2}.`);
+        }
+        record.final_score = score;
+        record.risk_level = providedRisk;
+        return record;
+    });
+
+    for (const feature of ["attendance_rate", "completion_rate"]) {
+        const maximum = Math.max(...data.map((record) => record[feature]));
+        if (maximum > 100) {
+            throw invalidCsv(`${feature} phải nằm trong khoảng 0–1 hoặc 0–100.`);
+        }
+        if (maximum > 1) {
+            data.forEach((record) => { record[feature] /= 100; });
+        }
+    }
+    for (const feature of ["assignment_score", "quiz_score", "previous_score"]) {
+        const maximum = Math.max(...data.map((record) => record[feature]));
+        if (maximum > 100) {
+            throw invalidCsv(`${feature} phải nằm trong khoảng 0–10 hoặc 0–100.`);
+        }
+        if (maximum > 10) {
+            data.forEach((record) => { record[feature] /= 10; });
+        }
+    }
+    for (const record of data) {
+        if (record.risk_level) continue;
+        generatedRiskLabels = true;
+        record.risk_level = record.final_score === null
+            ? deriveDemoRiskLevel(record)
+            : record.final_score < 5 ? "Cao" : record.final_score < 7 ? "Trung bình" : "Thấp";
+    }
+
+    if (data.length < 5) {
+        throw invalidCsv("Cần ít nhất 5 dòng dữ liệu để đánh giá mô hình.");
+    }
+    return { records: data, hasRegression, generatedRiskLabels };
+}
+
+function normalizeRiskLevel(value) {
+    const normalized = value.toLocaleLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[_-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    if (normalized.includes("cao") || normalized.includes("high")) return "Cao";
+    if (normalized.includes("thap") || normalized.includes("low") ||
+        normalized.includes("safe") || normalized.includes("an toan")) {
+        return "Thấp";
+    }
+    if (normalized.includes("trung binh") || normalized.includes("medium") ||
+        normalized.includes("moderate")) {
+        return "Trung bình";
+    }
+    return null;
+}
+
+function deriveDemoRiskLevel(record) {
+    const estimatedScore = Math.max(0, Math.min(10,
+        0.15 * record.attendance_rate * 10
+        + 0.12 * record.study_hours / 3
+        + 0.22 * record.assignment_score
+        + 0.20 * record.quiz_score
+        + 0.13 * record.completion_rate * 10
+        + 0.18 * record.previous_score
+        + 0.25 * (record.assignment_score * record.quiz_score / 10 - 4),
+    ));
+    return estimatedScore < 5 ? "Cao" : estimatedScore < 7 ? "Trung bình" : "Thấp";
+}
+
+function seededShuffle(values) {
+    const result = [...values];
+    let state = SEED;
+    for (let index = result.length - 1; index > 0; index -= 1) {
+        state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+        const target = state % (index + 1);
+        [result[index], result[target]] = [result[target], result[index]];
+    }
+    return result;
+}
+
+function normalizedFeatures(record) {
+    return FEATURES.map((feature, index) => record[feature] / FEATURE_SCALES[index]);
+}
+
+function solveLinearSystem(matrix, values) {
+    const size = values.length;
+    const augmented = matrix.map((row, index) => [...row, values[index]]);
+
+    for (let column = 0; column < size; column += 1) {
+        let pivot = column;
+        for (let row = column + 1; row < size; row += 1) {
+            if (Math.abs(augmented[row][column]) > Math.abs(augmented[pivot][column])) {
+                pivot = row;
+            }
+        }
+        if (Math.abs(augmented[pivot][column]) < 1e-12) continue;
+        [augmented[column], augmented[pivot]] = [augmented[pivot], augmented[column]];
+
+        const divisor = augmented[column][column];
+        for (let index = column; index <= size; index += 1) {
+            augmented[column][index] /= divisor;
+        }
+        for (let row = 0; row < size; row += 1) {
+            if (row === column) continue;
+            const factor = augmented[row][column];
+            for (let index = column; index <= size; index += 1) {
+                augmented[row][index] -= factor * augmented[column][index];
+            }
+        }
+    }
+    return augmented.map((row) => row[size]);
+}
+
+function trainRegressor(records) {
+    const dimensions = FEATURES.length + 1;
+    const matrix = Array.from({ length: dimensions }, () => Array(dimensions).fill(0));
+    const values = Array(dimensions).fill(0);
+
+    for (const record of records) {
+        const features = [1, ...normalizedFeatures(record)];
+        for (let row = 0; row < dimensions; row += 1) {
+            values[row] += features[row] * record.final_score;
+            for (let column = 0; column < dimensions; column += 1) {
+                matrix[row][column] += features[row] * features[column];
+            }
+        }
+    }
+    for (let index = 1; index < dimensions; index += 1) {
+        matrix[index][index] += 0.01;
+    }
+    return solveLinearSystem(matrix, values);
+}
+
+function predictScore(coefficients, record) {
+    const features = [1, ...normalizedFeatures(record)];
+    return features.reduce((sum, value, index) => sum + value * coefficients[index], 0);
+}
+
+function trainClassifier(records) {
+    return Object.fromEntries(RISK_CLASSES.map((label) => {
+        const classRecords = records.filter((record) => record.risk_level === label);
+        const means = FEATURES.map((feature, index) => (
+            classRecords.reduce(
+                (sum, record) => sum + record[feature] / FEATURE_SCALES[index],
+                0,
+            ) / Math.max(classRecords.length, 1)
+        ));
+        const variances = FEATURES.map((feature, index) => (
+            classRecords.reduce((sum, record) => {
+                const difference = record[feature] / FEATURE_SCALES[index] - means[index];
+                return sum + difference ** 2;
+            }, 0) / Math.max(classRecords.length, 1) + 1e-6
+        ));
+        return [label, { count: classRecords.length, means, variances }];
+    }));
+}
+
+function predictRisk(classifier, totalRecords, record) {
+    const features = normalizedFeatures(record);
+    let winner = null;
+    let bestScore = Number.NEGATIVE_INFINITY;
+    for (const label of RISK_CLASSES) {
+        const statistics = classifier[label];
+        if (!statistics.count) continue;
+        let score = Math.log(statistics.count / totalRecords);
+        for (let index = 0; index < features.length; index += 1) {
+            const variance = statistics.variances[index];
+            const difference = features[index] - statistics.means[index];
+            score -= 0.5 * (Math.log(2 * Math.PI * variance) + difference ** 2 / variance);
+        }
+        if (score > bestScore) {
+            winner = label;
+            bestScore = score;
+        }
+    }
+    return winner || RISK_CLASSES[0];
+}
+
+function calculateRegressionMetrics(actual, predicted, baselineScore) {
+    const mean = actual.reduce((sum, value) => sum + value, 0) / actual.length;
+    const squaredError = actual.reduce(
+        (sum, value, index) => sum + (value - predicted[index]) ** 2,
+        0,
+    );
+    const totalSquaredError = actual.reduce((sum, value) => sum + (value - mean) ** 2, 0);
+    const absoluteError = actual.reduce(
+        (sum, value, index) => sum + Math.abs(value - predicted[index]),
+        0,
+    );
+    const baselineSquaredError = actual.reduce(
+        (sum, value) => sum + (value - baselineScore) ** 2,
+        0,
+    );
+    return {
+        mae: round(absoluteError / actual.length),
+        rmse: round(Math.sqrt(squaredError / actual.length)),
+        r2_score: totalSquaredError ? round(1 - squaredError / totalSquaredError) : 0,
+        baseline_r2: totalSquaredError
+            ? round(1 - baselineSquaredError / totalSquaredError)
+            : 0,
+    };
+}
+
+function calculateClassificationMetrics(actual, predicted) {
+    const matrix = RISK_CLASSES.map(() => RISK_CLASSES.map(() => 0));
+    for (let index = 0; index < actual.length; index += 1) {
+        matrix[RISK_CLASSES.indexOf(actual[index])][RISK_CLASSES.indexOf(predicted[index])] += 1;
+    }
+    const classMetrics = RISK_CLASSES.map((_label, index) => {
+        const truePositive = matrix[index][index];
+        const predictedCount = matrix.reduce((sum, row) => sum + row[index], 0);
+        const actualCount = matrix[index].reduce((sum, count) => sum + count, 0);
+        const precision = predictedCount ? truePositive / predictedCount : 0;
+        const recall = actualCount ? truePositive / actualCount : 0;
+        return {
+            precision,
+            recall,
+            f1: precision + recall ? 2 * precision * recall / (precision + recall) : 0,
+        };
+    });
+    return {
+        accuracy: round(matrix.reduce((sum, row, index) => sum + row[index], 0) / actual.length),
+        macro_precision: round(classMetrics.reduce((sum, metric) => sum + metric.precision, 0) / RISK_CLASSES.length),
+        macro_recall: round(classMetrics.reduce((sum, metric) => sum + metric.recall, 0) / RISK_CLASSES.length),
+        macro_f1: round(classMetrics.reduce((sum, metric) => sum + metric.f1, 0) / RISK_CLASSES.length),
+        classes: RISK_CLASSES,
+        confusion_matrix: matrix,
+    };
+}
+
+function calculateClassificationImportances(records) {
+    const normalizedRecords = records.map(normalizedFeatures);
+    const overallMeans = FEATURES.map((_feature, index) => (
+        normalizedRecords.reduce((sum, values) => sum + values[index], 0) /
+        normalizedRecords.length
+    ));
+    const classMeans = RISK_CLASSES.map((label) => {
+        const values = normalizedRecords.filter(
+            (_features, index) => records[index].risk_level === label,
+        );
+        if (!values.length) return null;
+        return {
+            weight: values.length / normalizedRecords.length,
+            means: FEATURES.map((_feature, index) => (
+                values.reduce((sum, record) => sum + record[index], 0) / values.length
+            )),
+        };
+    }).filter(Boolean);
+    const weights = FEATURES.map((_feature, index) => classMeans.reduce(
+        (sum, group) => sum + group.weight * (group.means[index] - overallMeans[index]) ** 2,
+        0,
+    ));
+    const total = weights.reduce((sum, value) => sum + value, 0);
+    return Object.fromEntries(FEATURES.map((feature, index) => [
+        feature,
+        total ? round(weights[index] / total) : 0,
+    ]));
+}
+
+function round(value) {
+    return Math.round(value * 10000) / 10000;
+}
+
+function stringifyCsv(rows) {
+    return rows.map((row) => row.map((value) => {
+        const text = value === undefined || value === null ? "" : String(value);
+        return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
+    }).join(",")).join("\r\n") + "\r\n";
+}
+
+export function createDemoLabeledCsv(text) {
+    const rows = parseCsv(text);
+    const { records, generatedRiskLabels } = validateRows(text);
+    if (!generatedRiskLabels) {
+        const error = new Error("CSV đã có nhãn risk_level; không cần tạo nhãn demo.");
+        error.status = 409;
+        throw error;
+    }
+
+    const headers = rows[0].map((header) => header.trim());
+    const normalizedHeaders = headers.map(normalizeHeader);
+    const riskColumn = RISK_COLUMNS.find((column) => normalizedHeaders.includes(column));
+    const riskIndex = riskColumn ? normalizedHeaders.indexOf(riskColumn) : -1;
+    const output = [riskIndex === -1 ? [...headers, "risk_level"] : headers];
+    records.forEach((record, index) => {
+        const values = [...rows[index + 1]];
+        if (riskIndex === -1) {
+            values.push(record.risk_level);
+        } else if (!values[riskIndex].trim()) {
+            values[riskIndex] = record.risk_level;
+        }
+        output.push(values);
+    });
+    return stringifyCsv(output);
+}
+
+export function createCsvModelInfo(text, fileName, options = {}) {
+    const validated = validateRows(text);
+    const { records, hasRegression } = validated;
+    const generatedRiskLabels = validated.generatedRiskLabels ||
+        options.generatedRiskLabels === true;
+    const shuffled = seededShuffle(records);
+    const testSize = Math.max(2, Math.floor(records.length * 0.2));
+    const testRecords = shuffled.slice(0, testSize);
+    const trainRecords = shuffled.slice(testSize);
+    const classifier = trainClassifier(trainRecords);
+    const coefficients = hasRegression ? trainRegressor(trainRecords) : null;
+    const baselineScore = hasRegression
+        ? trainRecords.reduce((sum, record) => sum + record.final_score, 0) / trainRecords.length
+        : null;
+    const actualScores = hasRegression
+        ? testRecords.map((record) => record.final_score)
+        : [];
+    const predictedScores = hasRegression
+        ? testRecords.map((record) => predictScore(coefficients, record))
+        : [];
+    let featureImportances;
+    if (hasRegression) {
+        const featureWeights = coefficients.slice(1).map(Math.abs);
+        const weightTotal = featureWeights.reduce((sum, value) => sum + value, 0);
+        featureImportances = Object.fromEntries(FEATURES.map((feature, index) => [
+            feature,
+            weightTotal ? round(featureWeights[index] / weightTotal) : 0,
+        ]));
+    } else {
+        featureImportances = calculateClassificationImportances(trainRecords);
+    }
+    const fileLabel = typeof fileName === "string" && fileName
+        ? fileName
+        : "selected.csv";
+    const demoNotice = generatedRiskLabels
+        ? options.generatedRiskLabels
+            ? "Cột risk_level của bản CSV này được tạo bằng quy tắc demo từ các đặc trưng; đây không phải nhãn thực."
+            : hasRegression
+                ? "CSV không có nhãn risk_level; nhãn phân loại được suy ra từ final_score theo ngưỡng demo."
+                : "CSV không có final_score hoặc risk_level; nhãn rủi ro được ước tính bằng quy tắc demo từ 6 đặc trưng."
+        : undefined;
+
+    return {
+        success: true,
+        data_mode: "uploaded_csv",
+        is_demo: generatedRiskLabels,
+        generated_risk_labels: generatedRiskLabels,
+        demo_labeled_copy: options.demoLabeledCopy === true,
+        ...(demoNotice ? { demo_notice: demoNotice } : {}),
+        model_name: `EduInsight CSV Model - ${fileLabel}`,
+        algorithm_regression: hasRegression ? "Ridge Regression" : null,
+        algorithm_classification: "Gaussian Naive Bayes",
+        trained_at: new Date().toISOString(),
+        model_version: generatedRiskLabels
+            ? hasRegression ? "csv-ridge-nb-demo-v1" : "csv-nb-demo-v1"
+            : hasRegression ? "csv-ridge-nb-v1" : "csv-nb-v1",
+        total_training_samples: trainRecords.length,
+        features: FEATURES,
+        regression_metrics: hasRegression
+            ? calculateRegressionMetrics(actualScores, predictedScores, baselineScore)
+            : null,
+        classification_metrics: calculateClassificationMetrics(
+            testRecords.map((record) => record.risk_level),
+            testRecords.map((record) => predictRisk(classifier, trainRecords.length, record)),
+        ),
+        feature_importances: featureImportances,
+        dataset_info: {
+            name: fileLabel,
+            record_count: records.length,
+            train_test_split: `${trainRecords.length}/${testRecords.length}`,
+            random_seed: SEED,
+        },
+        actual_vs_predicted: hasRegression ? testRecords.map((record, index) => ({
+            actual: record.final_score,
+            predicted: round(predictedScores[index]),
+        })) : [],
+        metrics_notice: hasRegression
+            ? generatedRiskLabels
+                ? "Metrics hồi quy dùng final_score trong file; metrics phân loại chỉ đo mức khớp với nhãn demo được sinh ra."
+                : "Metrics được tính từ file CSV đã chọn trên tập kiểm tra; độ tin cậy phụ thuộc số lượng và chất lượng dữ liệu."
+            : generatedRiskLabels
+                ? "Chỉ có metrics phân loại theo nhãn demo được sinh từ đặc trưng; không có ground truth để đánh giá hiệu quả dự đoán thực tế."
+                : "CSV không có final_score nên chỉ đánh giá phân loại risk_level; không hiển thị metrics hồi quy.",
+    };
+}
